@@ -45,6 +45,7 @@ def create_couple(user):
             left_label=template.left_label,
             right_label=template.right_label,
             sort_order=template.sort_order,
+            importance=100,
             created_by=user,
         )
         for template in templates
@@ -83,6 +84,7 @@ def join_couple(user, code):
     invitation.save(update_fields=['used_at'])
 
     return invitation.couple
+
 
 def get_user_couple(user):
     membership = (
