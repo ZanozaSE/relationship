@@ -5,6 +5,8 @@ from .models import CoupleMetric, MetricImportance, MetricValue
 
 class CoupleMetricSerializer(serializers.ModelSerializer):
     importance = serializers.SerializerMethodField()
+    latest_value = serializers.SerializerMethodField()
+    latest_satisfaction = serializers.SerializerMethodField()
 
     class Meta:
         model = CoupleMetric
@@ -19,12 +21,34 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
             'right_label',
             'sort_order',
             'importance',
+            'latest_value',
+            'latest_satisfaction',
         )
 
     def get_importance(self, obj):
         user = self.context['request'].user
         importance = obj.importance_settings.filter(user=user).first()
         return importance.importance if importance else 100
+
+    def get_latest_value(self, obj):
+        user = self.context['request'].user
+        metric_value = (
+            obj.values
+            .filter(user=user)
+            .order_by('-created_at', '-id')
+            .first()
+        )
+        return metric_value.value if metric_value else None
+
+    def get_latest_satisfaction(self, obj):
+        user = self.context['request'].user
+        metric_value = (
+            obj.values
+            .filter(user=user)
+            .order_by('-created_at', '-id')
+            .first()
+        )
+        return metric_value.satisfaction if metric_value else None
 
 
 class CreateCoupleMetricSerializer(serializers.ModelSerializer):
