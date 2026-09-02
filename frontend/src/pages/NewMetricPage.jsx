@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { apiFetch } from '../api'
 
 const SCALE_TYPES = [
   {
@@ -61,11 +62,8 @@ function NewMetricPage() {
     setIsSaving(true)
 
     try {
-      const response = await fetch('/api/metrics/create/', {
+      const response = await apiFetch('/api/metrics/create/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           name: name.trim(),
           scale_type: selectedType.value,
