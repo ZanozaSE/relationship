@@ -27,9 +27,10 @@
 .metric-step-button:hover:not(:disabled) { color:#fff; background:rgba(240,91,167,.1); border-color:rgba(240,91,167,.35); transform:translateY(-1px); }
 .metric-step-button:active:not(:disabled) { transform:scale(.96); }
 .metric-step-button:disabled { color:rgba(245,242,247,.18); background:rgba(255,255,255,.025); border-color:rgba(255,255,255,.045); cursor:default; }
-.metric-step-track { position:relative; height:6px; overflow:hidden; background:rgba(255,255,255,.1); border-radius:999px; }
+.metric-step-track { position:relative; height:6px; overflow:visible; background:rgba(255,255,255,.1); border-radius:999px; }
 .metric-step-fill { position:absolute; top:0; left:0; height:100%; background:linear-gradient(90deg,#8e2c69,#ec4899); border-radius:999px; }
 .metric-step-target { position:absolute; z-index:1; top:50%; width:3px; height:14px; background:rgba(255,255,255,.62); border-radius:3px; transform:translate(-50%,-50%); }
+.metric-step-thumb { position:absolute; z-index:2; top:50%; width:14px; height:14px; background:#fff; border:3px solid #ec4899; border-radius:50%; box-shadow:0 0 12px rgba(236,72,153,.55); transform:translate(-50%,-50%); transition:left 120ms ease; }
 .metric-value-row { justify-content:space-between; gap:16px; margin-top:17px; }
 .metric-value-label,.metric-satisfaction span { display:block; color:rgba(245,242,247,.4); font-size:10px; line-height:1.4; }
 .metric-value { display:block; margin-top:3px; color:#fff; font-size:25px; font-weight:750; letter-spacing:-.03em; }
@@ -38,6 +39,7 @@
 .metric-value-stepper { margin-top:0; }
 .metric-value-step-button { width:40px; height:40px; border-radius:12px; }
 .metric-value-stepper .metric-step-track { height:7px; }
+.metric-value-stepper .metric-step-thumb { width:20px; height:20px; border-width:4px; box-shadow:0 0 16px rgba(236,72,153,.65); }
 .metric-scale-labels { justify-content:space-between; gap:8px; margin-top:6px; color:rgba(245,242,247,.5); font-size:10px; }
 .metric-scale-labels span:last-child { text-align:right; }
 .metric-scale-values { display:none; }
