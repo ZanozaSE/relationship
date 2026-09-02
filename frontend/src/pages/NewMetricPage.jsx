@@ -2,53 +2,44 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const SCALE_TYPES = [
-  { value: 'balance', label: 'Баланс', description: 'От одного полюса к другому' },
-  { value: 'level', label: 'Уровень', description: 'От минимального значения к максимальному' },
+  {
+    value: 'balance',
+    label: 'Баланс',
+    description: 'От одного полюса к другому',
+    min: -99,
+    max: 99,
+    target: 0,
+    leftLabel: 'Мало',
+    rightLabel: 'Много',
+  },
+  {
+    value: 'level',
+    label: 'Уровень',
+    description: 'От минимального значения к максимальному',
+    min: 1,
+    max: 100,
+    target: 100,
+    leftLabel: '0',
+    rightLabel: '100',
+  },
 ]
 
 function NewMetricPage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [scaleType, setScaleType] = useState('balance')
-  const [minValue, setMinValue] = useState('-99')
-  const [maxValue, setMaxValue] = useState('99')
-  const [targetValue, setTargetValue] = useState('0')
   const [leftLabel, setLeftLabel] = useState('Мало')
   const [rightLabel, setRightLabel] = useState('Много')
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [success, setSuccess] = useState('')
 
-  function validate() {
-    const min = Number(minValue)
-    const max = Number(maxValue)
-    const target = Number(targetValue)
-
-    if (!name.trim()) {
-      return 'Введите название метрики.'
-    }
-
-    if (!Number.isFinite(min) || !Number.isFinite(max) || !Number.isFinite(target)) {
-      return 'Значения шкалы должны быть числами.'
-    }
-
-    if (min >= max) {
-      return 'Минимальное значение должно быть меньше максимального.'
-    }
-
-    if (target < min || target > max) {
-      return 'Оптимальное значение должно находиться внутри диапазона шкалы.'
-    }
-
-    if (scaleType === 'balance' && (min !== -99 || max !== 99)) {
-      return 'Для шкалы «Баланс» допустим только диапазон от -99 до 99.'
-    }
-
-    if (!leftLabel.trim() || !rightLabel.trim()) {
-      return 'Заполните подписи обоих полюсов шкалы.'
-    }
-
-    return ''
+  function handleScaleTypeChange(value) {
+    const selectedType = SCALE_TYPES.find((type) => type.value === value)
+    setScaleType(value)
+    setLeftLabel(selectedType.leftLabel)
+    setRightLabel(selectedType.rightLabel)
+    setError('')
   }
 
   async function handleSubmit(event) {
@@ -56,12 +47,17 @@ function NewMetricPage() {
     setError('')
     setSuccess('')
 
-    const validationError = validate()
-    if (validationError) {
-      setError(validationError)
+    if (!name.trim()) {
+      setError('Введите название метрики.')
       return
     }
 
+    if (!leftLabel.trim() || !rightLabel.trim()) {
+      setError('Заполните подписи обоих полюсов шкалы.')
+      return
+    }
+
+    const selectedType = SCALE_TYPES.find((type) => type.value === scaleType)
     setIsSaving(true)
 
     try {
@@ -72,10 +68,10 @@ function NewMetricPage() {
         },
         body: JSON.stringify({
           name: name.trim(),
-          scale_type: scaleType,
-          min_value: Number(minValue),
-          max_value: Number(maxValue),
-          target_value: Number(targetValue),
+          scale_type: selectedType.value,
+          min_value: selectedType.min,
+          max_value: selectedType.max,
+          target_value: selectedType.target,
           left_label: leftLabel.trim(),
           right_label: rightLabel.trim(),
         }),
@@ -145,7 +141,7 @@ function NewMetricPage() {
                   name="scaleType"
                   value={type.value}
                   checked={scaleType === type.value}
-                  onChange={(event) => setScaleType(event.target.value)}
+                  onChange={(event) => handleScaleTypeChange(event.target.value)}
                   disabled={isSaving}
                 />
                 <span className="scale-option-content">
@@ -159,41 +155,19 @@ function NewMetricPage() {
 
         <div className="form-section">
           <div className="form-section-heading">
-            <span>Диапазон</span>
-            <small>Границы значения и оптимальная точка</small>
+            <span>Шкала</span>
+            <small>
+              {scaleType === 'balance'
+                ? 'Фиксированный диапазон от −99 до 99, оптимальное значение — 0'
+                : 'Фиксированный диапазон от 1 до 100, оптимальное значение — 100'}
+            </small>
           </div>
 
-          <div className="number-grid">
-            <label className="form-field">
-              <span>Минимум</span>
-              <input
-                type="number"
-                value={minValue}
-                onChange={(event) => setMinValue(event.target.value)}
-                disabled={isSaving || scaleType === 'balance'}
-              />
-            </label>
-
-            <label className="form-field">
-              <span>Максимум</span>
-              <input
-                type="number"
-                value={maxValue}
-                onChange={(event) => setMaxValue(event.target.value)}
-                disabled={isSaving || scaleType === 'balance'}
-              />
-            </label>
+          <div className="scale-fixed-values">
+            <span>{SCALE_TYPES.find((type) => type.value === scaleType).min}</span>
+            <span>Оптимум: {SCALE_TYPES.find((type) => type.value === scaleType).target}</span>
+            <span>{SCALE_TYPES.find((type) => type.value === scaleType).max}</span>
           </div>
-
-          <label className="form-field">
-            <span>Оптимальное значение</span>
-            <input
-              type="number"
-              value={targetValue}
-              onChange={(event) => setTargetValue(event.target.value)}
-              disabled={isSaving}
-            />
-          </label>
         </div>
 
         <div className="form-section">
