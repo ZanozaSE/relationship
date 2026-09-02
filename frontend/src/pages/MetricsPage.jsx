@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { apiFetch } from '../api'
 
 const BALANCE_MIN = -99
 const BALANCE_MAX = 99
+const SAVE_DEBOUNCE_MS = 250
 
 function formatValue(metric, value) {
   if (value === null || value === undefined) return '—'
@@ -22,12 +23,19 @@ function MetricCard({ metric, onValueSaved }) {
   const [saveError, setSaveError] = useState('')
   const [importance, setImportance] = useState(metric.importance ?? 100)
   const [isSavingImportance, setIsSavingImportance] = useState(false)
+  const valueSaveTimerRef = useRef(null)
+  const importanceSaveTimerRef = useRef(null)
 
   useEffect(() => {
     setValue(metric.latest_value)
     setSatisfaction(metric.latest_satisfaction)
     setImportance(metric.importance ?? 100)
   }, [metric.latest_value, metric.latest_satisfaction, metric.importance])
+
+  useEffect(() => () => {
+    if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
+    if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
+  }, [])
 
   const minValue = metric.scale_type === 'balance' ? BALANCE_MIN : metric.min_value
   const maxValue = metric.scale_type === 'balance' ? BALANCE_MAX : metric.max_value
@@ -79,29 +87,44 @@ function MetricCard({ metric, onValueSaved }) {
     }
   }
 
+  function scheduleValueSave(nextValue) {
+    if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
+    valueSaveTimerRef.current = setTimeout(() => {
+      saveValue(nextValue)
+    }, SAVE_DEBOUNCE_MS)
+  }
+
+  function scheduleImportanceSave(nextImportance) {
+    if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
+    importanceSaveTimerRef.current = setTimeout(() => {
+      saveImportance(nextImportance)
+    }, SAVE_DEBOUNCE_MS)
+  }
+
   function handleSliderChange(event) {
     const nextValue = Number(event.target.value)
     setValue(nextValue)
     setSatisfaction(calculateSatisfaction(metric, nextValue))
-  }
-
-  function handleSliderCommit(event) {
-    saveValue(Number(event.target.value))
+    scheduleValueSave(nextValue)
   }
 
   function handleImportanceChange(event) {
     const nextImportance = Number(event.target.value)
     setImportance(nextImportance)
-  }
-
-  function handleImportanceCommit(event) {
-    saveImportance(Number(event.target.value))
+    scheduleImportanceSave(nextImportance)
   }
 
   function selectOptimalValue() {
+    if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
     setValue(metric.target_value)
     setSatisfaction(calculateSatisfaction(metric, metric.target_value))
     saveValue(metric.target_value)
+  }
+
+  function selectZeroImportance() {
+    if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
+    setImportance(0)
+    saveImportance(0)
   }
 
   return (
@@ -120,19 +143,26 @@ function MetricCard({ metric, onValueSaved }) {
           <span>0%</span>
           <span>200%</span>
         </div>
-        <input
-          className="metric-importance-slider"
-          type="range"
-          min="0"
-          max="200"
-          step="1"
-          value={importance}
-          onChange={handleImportanceChange}
-          onMouseUp={handleImportanceCommit}
-          onTouchEnd={handleImportanceCommit}
-          aria-label={`Важность метрики «${metric.name}»`}
-          disabled={isSavingImportance}
-        />
+        <div className="metric-importance-slider-wrap">
+          <button
+            type="button"
+            className="metric-importance-zero-hit"
+            onClick={selectZeroImportance}
+            aria-label="Установить важность 0%"
+            disabled={isSavingImportance}
+          />
+          <input
+            className="metric-importance-slider"
+            type="range"
+            min="0"
+            max="200"
+            step="1"
+            value={importance}
+            onChange={handleImportanceChange}
+            aria-label={`Важность метрики «${metric.name}»`}
+            disabled={isSavingImportance}
+          />
+        </div>
       </div>
 
       <div className="metric-value-row">
@@ -149,14 +179,16 @@ function MetricCard({ metric, onValueSaved }) {
       <div className="metric-slider-area">
         <div className="metric-slider-track">
           <span className="metric-slider-fill" style={{ width: `${Math.max(0, Math.min(100, position))}%` }} />
-          <button
-            type="button"
-            className="metric-slider-target"
-            style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }}
-            onClick={selectOptimalValue}
-            aria-label={`Выбрать оптимальное значение ${formatValue(metric, metric.target_value)} для метрики «${metric.name}»`}
-            disabled={isSaving}
-          />
+          {metric.scale_type === 'balance' && (
+            <button
+              type="button"
+              className="metric-slider-target"
+              style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }}
+              onClick={selectOptimalValue}
+              aria-label="Установить значение 0"
+              disabled={isSaving}
+            />
+          )}
           <input
             className="metric-slider"
             type="range"
@@ -165,8 +197,6 @@ function MetricCard({ metric, onValueSaved }) {
             step="1"
             value={currentValue}
             onChange={handleSliderChange}
-            onMouseUp={handleSliderCommit}
-            onTouchEnd={handleSliderCommit}
             aria-label={`Изменить значение метрики «${metric.name}»`}
             disabled={isSaving}
           />
