@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
-from .models import CoupleMetric
+from .models import CoupleMetric, MetricImportance
 
 
 class CoupleMetricSerializer(serializers.ModelSerializer):
+    importance = serializers.SerializerMethodField()
+
     class Meta:
         model = CoupleMetric
         fields = (
@@ -18,3 +20,8 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
             'sort_order',
             'importance',
         )
+
+    def get_importance(self, obj):
+        user = self.context['request'].user
+        importance = obj.importance_settings.filter(user=user).first()
+        return importance.importance if importance else 100
