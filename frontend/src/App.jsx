@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout'
 import LoginPage from './pages/LoginPage'
+import HomePage from './pages/HomePage'
 import MetricsPage from './pages/MetricsPage'
 import NewMetricPage from './pages/NewMetricPage'
 import { useAuth } from './auth/AuthContext.jsx'
@@ -52,7 +53,7 @@ function App() {
         <Route path="/login" element={<LoginRoute />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<PlaceholderPage title="Главная" />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/metrics/new" element={<NewMetricPage />} />
           <Route path="/history" element={<PlaceholderPage title="История" />} />
