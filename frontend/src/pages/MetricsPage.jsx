@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { apiFetch } from '../api'
 
+const BALANCE_MIN = -99
+const BALANCE_MAX = 99
+
 function formatValue(metric, value) {
   if (value === null || value === undefined) return '—'
   return metric.scale_type === 'balance' && value > 0 ? `+${value}` : value
@@ -17,16 +20,21 @@ function MetricCard({ metric, onValueSaved }) {
   const [satisfaction, setSatisfaction] = useState(metric.latest_satisfaction)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [importance, setImportance] = useState(metric.importance ?? 100)
+  const [isSavingImportance, setIsSavingImportance] = useState(false)
 
   useEffect(() => {
     setValue(metric.latest_value)
     setSatisfaction(metric.latest_satisfaction)
-  }, [metric.latest_value, metric.latest_satisfaction])
+    setImportance(metric.importance ?? 100)
+  }, [metric.latest_value, metric.latest_satisfaction, metric.importance])
 
-  const range = metric.max_value - metric.min_value
+  const minValue = metric.scale_type === 'balance' ? BALANCE_MIN : metric.min_value
+  const maxValue = metric.scale_type === 'balance' ? BALANCE_MAX : metric.max_value
+  const range = maxValue - minValue
   const currentValue = value ?? metric.target_value
-  const position = range > 0 ? ((currentValue - metric.min_value) / range) * 100 : 50
-  const targetPosition = range > 0 ? ((metric.target_value - metric.min_value) / range) * 100 : 50
+  const position = range > 0 ? ((currentValue - minValue) / range) * 100 : 50
+  const targetPosition = range > 0 ? ((metric.target_value - minValue) / range) * 100 : 50
 
   async function saveValue(nextValue) {
     setIsSaving(true)
@@ -50,6 +58,26 @@ function MetricCard({ metric, onValueSaved }) {
     }
   }
 
+  async function saveImportance(nextImportance) {
+    setIsSavingImportance(true)
+    try {
+      const response = await apiFetch(`/api/metrics/${metric.id}/importance/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ importance: nextImportance }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data.detail || data.importance?.[0] || 'Не удалось сохранить важность.')
+      }
+      setImportance(data.importance)
+    } catch (requestError) {
+      setSaveError(requestError.message || 'Не удалось сохранить важность.')
+      setImportance(metric.importance ?? 100)
+    } finally {
+      setIsSavingImportance(false)
+    }
+  }
+
   function handleSliderChange(event) {
     const nextValue = Number(event.target.value)
     setValue(nextValue)
@@ -60,6 +88,15 @@ function MetricCard({ metric, onValueSaved }) {
     saveValue(Number(event.target.value))
   }
 
+  function handleImportanceChange(event) {
+    const nextImportance = Number(event.target.value)
+    setImportance(nextImportance)
+  }
+
+  function handleImportanceCommit(event) {
+    saveImportance(Number(event.target.value))
+  }
+
   return (
     <article className="metric-card">
       <div className="metric-card-header">
@@ -67,7 +104,28 @@ function MetricCard({ metric, onValueSaved }) {
           <span className="metric-card-icon"><SlidersHorizontal size={16} strokeWidth={1.8} /></span>
           <h2>{metric.name}</h2>
         </div>
-        <span className="metric-importance">Важность {metric.importance}%</span>
+        <span className="metric-importance-value">{importance}%</span>
+      </div>
+
+      <div className="metric-importance-control">
+        <div className="metric-importance-heading">
+          <span>Важность</span>
+          <span>0%</span>
+          <span>200%</span>
+        </div>
+        <input
+          className="metric-importance-slider"
+          type="range"
+          min="0"
+          max="200"
+          step="1"
+          value={importance}
+          onChange={handleImportanceChange}
+          onMouseUp={handleImportanceCommit}
+          onTouchEnd={handleImportanceCommit}
+          aria-label={`Важность метрики «${metric.name}»`}
+          disabled={isSavingImportance}
+        />
       </div>
 
       <div className="metric-value-row">
@@ -88,8 +146,8 @@ function MetricCard({ metric, onValueSaved }) {
           <input
             className="metric-slider"
             type="range"
-            min={metric.min_value}
-            max={metric.max_value}
+            min={minValue}
+            max={maxValue}
             step="1"
             value={currentValue}
             onChange={handleSliderChange}
@@ -103,17 +161,9 @@ function MetricCard({ metric, onValueSaved }) {
           <span>{metric.left_label}</span>
           <span>{metric.right_label}</span>
         </div>
-        <div className="metric-scale-values">
-          <span>{metric.min_value}</span>
-          <span>Оптимум {formatValue(metric, metric.target_value)}</span>
-          <span>{metric.max_value}</span>
-        </div>
       </div>
 
-      <div className="metric-card-footer">
-        <span>{isSaving ? 'Сохраняем…' : 'Потяните ползунок, чтобы изменить значение'}</span>
-        {saveError && <span className="metric-save-error">{saveError}</span>}
-      </div>
+      {saveError && <div className="metric-save-error">{saveError}</div>}
     </article>
   )
 }
@@ -154,7 +204,6 @@ function MetricsPage() {
         <div>
           <p className="page-eyebrow">Ваши показатели</p>
           <h1>Метрики</h1>
-          <p className="page-description">Оцените каждую область отношений. Значение можно изменить в любой момент.</p>
         </div>
         <button type="button" className="icon-button" onClick={loadMetrics} disabled={isLoading} aria-label="Обновить метрики">
           <RefreshCw size={18} className={isLoading ? 'spin' : ''} />
