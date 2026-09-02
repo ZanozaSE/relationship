@@ -169,15 +169,9 @@ function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
         </div>
       </div>
 
-      <div className="metric-value-row">
-        <div>
-          <span className="metric-value-label">Текущее значение</span>
-          <strong className="metric-value">{formatValue(metric, value)}</strong>
-        </div>
-        <div className="metric-satisfaction">
-          <span>Удовлетворённость</span>
-          <strong>{satisfaction == null ? '—' : `${satisfaction}%`}</strong>
-        </div>
+      <div className="metric-satisfaction-only">
+        <span>Удовлетворённость</span>
+        <strong>{satisfaction == null ? '—' : `${satisfaction}%`}</strong>
       </div>
 
       <div className="metric-slider-area">
