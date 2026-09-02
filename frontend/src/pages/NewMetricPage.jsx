@@ -33,7 +33,6 @@ function NewMetricPage() {
   const [rightLabel, setRightLabel] = useState('Много')
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  const [success, setSuccess] = useState('')
 
   function handleScaleTypeChange(value) {
     const selectedType = SCALE_TYPES.find((type) => type.value === value)
@@ -46,7 +45,6 @@ function NewMetricPage() {
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
-    setSuccess('')
 
     if (!name.trim()) {
       setError('Введите название метрики.')
@@ -86,8 +84,7 @@ function NewMetricPage() {
         throw new Error(serverError)
       }
 
-      setSuccess(`Метрика «${data.name}» создана.`)
-      setTimeout(() => navigate('/metrics'), 500)
+      navigate('/metrics')
     } catch (requestError) {
       setError(requestError.message || 'Не удалось сохранить метрику.')
     } finally {
@@ -200,7 +197,6 @@ function NewMetricPage() {
         </div>
 
         {error && <p className="form-message error">{error}</p>}
-        {success && <p className="form-message success">{success}</p>}
 
         <button type="submit" className="primary-button" disabled={isSaving}>
           {isSaving ? 'Сохранение…' : 'Сохранить метрику'}
