@@ -5,6 +5,7 @@ from .views import (
     MetricValueHistoryView,
     MetricValueView,
     MyMetricsView,
+    RelationshipSatisfactionHistoryView,
     RelationshipSatisfactionView,
 )
 
@@ -30,5 +31,10 @@ urlpatterns = [
         'satisfaction/',
         RelationshipSatisfactionView.as_view(),
         name='relationship_satisfaction',
+    ),
+    path(
+        'satisfaction/history/',
+        RelationshipSatisfactionHistoryView.as_view(),
+        name='relationship_satisfaction_history',
     ),
 ]
