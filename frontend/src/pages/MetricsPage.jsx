@@ -151,8 +151,6 @@ function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
       <div className="metric-importance-control">
         <div className="metric-importance-heading">
           <span>Важность</span>
-          <span>0%</span>
-          <span>200%</span>
         </div>
         <div className="metric-stepper">
           <button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting} aria-label="Уменьшить важность">
@@ -169,9 +167,11 @@ function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
         </div>
       </div>
 
-      <div className="metric-satisfaction-only">
+      <div className="metric-satisfaction-only metric-importance-heading">
         <span>Удовлетворённость</span>
-        <strong>{satisfaction == null ? '—' : `${satisfaction}%`}</strong>
+        <span style={{ color: '#f05ba7', fontSize: '16px', fontWeight: 700, lineHeight: 1.2 }}>
+          {satisfaction == null ? '—' : `${satisfaction}%`}
+        </span>
       </div>
 
       <div className="metric-slider-area">
