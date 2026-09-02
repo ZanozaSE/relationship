@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout'
+import NewMetricPage from './pages/NewMetricPage'
 
 function PlaceholderPage({ title }) {
   return (
@@ -17,7 +18,7 @@ function App() {
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<PlaceholderPage title="Главная" />} />
           <Route path="/metrics" element={<PlaceholderPage title="Метрики" />} />
-          <Route path="/metrics/new" element={<PlaceholderPage title="Новая метрика" />} />
+          <Route path="/metrics/new" element={<NewMetricPage />} />
           <Route path="/history" element={<PlaceholderPage title="История" />} />
           <Route path="/profile" element={<PlaceholderPage title="Профиль" />} />
         </Route>
