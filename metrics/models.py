@@ -93,15 +93,6 @@ class CoupleMetric(models.Model):
         default=True
     )
 
-    importance = models.PositiveSmallIntegerField(
-        default=100,
-        validators=[
-            MinValueValidator(70),
-            MaxValueValidator(130),
-        ],
-        help_text='Вес метрики в процентах. Допустимый диапазон: 70–130%.',
-    )
-
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -119,6 +110,40 @@ class CoupleMetric(models.Model):
 
     def __str__(self):
         return f"{self.name} → Couple #{self.couple_id}"
+
+
+class MetricImportance(models.Model):
+    metric = models.ForeignKey(
+        CoupleMetric,
+        on_delete=models.CASCADE,
+        related_name='importance_settings'
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='metric_importances'
+    )
+
+    importance = models.PositiveSmallIntegerField(
+        default=100,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(200),
+        ],
+        help_text='Индивидуальная важность метрики в процентах. Допустимый диапазон: 0–200%.',
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['metric', 'user'],
+                name='unique_metric_importance_per_user',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} → {self.metric}: {self.importance}%"
 
 
 class MetricValue(models.Model):
