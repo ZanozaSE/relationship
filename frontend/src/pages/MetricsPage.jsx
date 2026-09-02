@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { RefreshCw, SlidersHorizontal } from 'lucide-react'
+import { Minus, Plus, RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { apiFetch } from '../api'
 
 const BALANCE_MIN = -99
@@ -78,7 +78,7 @@ function MetricCard({ metric, onValueSaved }) {
       if (!response.ok) {
         throw new Error(data.detail || data.importance?.[0] || 'Не удалось сохранить важность.')
       }
-      setImportance(data.importance)
+      setImportance(data.importance ?? nextImportance)
     } catch (requestError) {
       setSaveError(requestError.message || 'Не удалось сохранить важность.')
       setImportance(metric.importance ?? 100)
@@ -101,30 +101,19 @@ function MetricCard({ metric, onValueSaved }) {
     }, SAVE_DEBOUNCE_MS)
   }
 
-  function handleSliderChange(event) {
-    const nextValue = Number(event.target.value)
+  function changeValue(delta) {
+    const nextValue = Math.max(minValue, Math.min(maxValue, currentValue + delta))
+    if (nextValue === currentValue || isSaving) return
     setValue(nextValue)
     setSatisfaction(calculateSatisfaction(metric, nextValue))
     scheduleValueSave(nextValue)
   }
 
-  function handleImportanceChange(event) {
-    const nextImportance = Number(event.target.value)
+  function changeImportance(delta) {
+    const nextImportance = Math.max(0, Math.min(200, importance + delta))
+    if (nextImportance === importance || isSavingImportance) return
     setImportance(nextImportance)
     scheduleImportanceSave(nextImportance)
-  }
-
-  function selectOptimalValue() {
-    if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
-    setValue(metric.target_value)
-    setSatisfaction(calculateSatisfaction(metric, metric.target_value))
-    saveValue(metric.target_value)
-  }
-
-  function selectZeroImportance() {
-    if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
-    setImportance(0)
-    saveImportance(0)
   }
 
   return (
@@ -143,25 +132,29 @@ function MetricCard({ metric, onValueSaved }) {
           <span>0%</span>
           <span>200%</span>
         </div>
-        <div className="metric-importance-slider-wrap">
+        <div className="metric-stepper">
           <button
             type="button"
-            className="metric-importance-zero-hit"
-            onClick={selectZeroImportance}
-            aria-label="Установить важность 0%"
-            disabled={isSavingImportance}
-          />
-          <input
-            className="metric-importance-slider"
-            type="range"
-            min="0"
-            max="200"
-            step="1"
-            value={importance}
-            onChange={handleImportanceChange}
-            aria-label={`Важность метрики «${metric.name}»`}
-            disabled={isSavingImportance}
-          />
+            className="metric-step-button"
+            onClick={() => changeImportance(-1)}
+            disabled={isSavingImportance || importance <= 0}
+            aria-label="Уменьшить важность"
+          >
+            <Minus size={16} />
+          </button>
+          <div className="metric-step-track" aria-hidden="true">
+            <span className="metric-step-fill" style={{ width: `${(importance / 200) * 100}%` }} />
+            <span className="metric-step-target" style={{ left: '50%' }} />
+          </div>
+          <button
+            type="button"
+            className="metric-step-button"
+            onClick={() => changeImportance(1)}
+            disabled={isSavingImportance || importance >= 200}
+            aria-label="Увеличить важность"
+          >
+            <Plus size={16} />
+          </button>
         </div>
       </div>
 
@@ -177,29 +170,29 @@ function MetricCard({ metric, onValueSaved }) {
       </div>
 
       <div className="metric-slider-area">
-        <div className="metric-slider-track">
-          <span className="metric-slider-fill" style={{ width: `${Math.max(0, Math.min(100, position))}%` }} />
-          {metric.scale_type === 'balance' && (
-            <button
-              type="button"
-              className="metric-slider-target"
-              style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }}
-              onClick={selectOptimalValue}
-              aria-label="Установить значение 0"
-              disabled={isSaving}
-            />
-          )}
-          <input
-            className="metric-slider"
-            type="range"
-            min={minValue}
-            max={maxValue}
-            step="1"
-            value={currentValue}
-            onChange={handleSliderChange}
-            aria-label={`Изменить значение метрики «${metric.name}»`}
-            disabled={isSaving}
-          />
+        <div className="metric-stepper metric-value-stepper">
+          <button
+            type="button"
+            className="metric-step-button metric-value-step-button"
+            onClick={() => changeValue(-1)}
+            disabled={isSaving || currentValue <= minValue}
+            aria-label={`Уменьшить значение метрики «${metric.name}»`}
+          >
+            <Minus size={18} />
+          </button>
+          <div className="metric-step-track" aria-hidden="true">
+            <span className="metric-step-fill" style={{ width: `${Math.max(0, Math.min(100, position))}%` }} />
+            <span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
+          </div>
+          <button
+            type="button"
+            className="metric-step-button metric-value-step-button"
+            onClick={() => changeValue(1)}
+            disabled={isSaving || currentValue >= maxValue}
+            aria-label={`Увеличить значение метрики «${metric.name}»`}
+          >
+            <Plus size={18} />
+          </button>
         </div>
         <div className="metric-scale-labels">
           <span>{metric.left_label}</span>
