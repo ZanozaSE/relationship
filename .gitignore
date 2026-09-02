@@ -1,6 +1,4 @@
-# =========================
-# Python
-# =========================
+config/settings.py
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,9 +13,6 @@ develop-eggs/
 pip-wheel-metadata/
 *.egg-info/
 
-# =========================
-# Virtual environments
-# =========================
 ../.venv/
 venv/
 env/
@@ -25,9 +20,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# =========================
-# Django
-# =========================
 *.log
 db.sqlite3
 db.sqlite3-journal
@@ -38,31 +30,19 @@ media/
 # Collected static files
 staticfiles/
 
-# =========================
-# Environment variables / secrets
-# =========================
 .env
 .env.*
 !.env.example
 
-# =========================
-# PyCharm / JetBrains
-# =========================
 .idea/
 *.iml
 *.iws
 *.ipr
 
-# =========================
-# OS generated files
-# =========================
 .DS_Store
 Thumbs.db
 Desktop.ini
 
-# =========================
-# Testing / coverage
-# =========================
 .coverage
 .coverage.*
 htmlcov/
@@ -70,16 +50,11 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# =========================
-# Jupyter
-# =========================
 .ipynb_checkpoints/
 
-# =========================
-# Temporary files
-# =========================
 *.tmp
 *.temp
 *.swp
 *.swo
 *~
+
