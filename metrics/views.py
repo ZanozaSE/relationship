@@ -7,6 +7,7 @@ from couples.services import get_user_couple
 from .models import CoupleMetric, MetricImportance, MetricValue
 from .serializers import (
     CoupleMetricSerializer,
+    CreateCoupleMetricSerializer,
     MetricImportanceSerializer,
     MetricValueSerializer,
 )
@@ -40,6 +41,65 @@ class MyMetricsView(APIView):
         )
 
         return Response(serializer.data)
+
+
+class CreateMetricView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        couple = get_user_couple(request.user)
+
+        if couple is None:
+            return Response(
+                {'detail': 'Пользователь не состоит в паре.'},
+                status=404,
+            )
+
+        serializer = CreateCoupleMetricSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        last_metric = (
+            CoupleMetric.objects
+            .filter(couple=couple)
+            .order_by('-sort_order', '-id')
+            .first()
+        )
+        sort_order = last_metric.sort_order + 1 if last_metric else 0
+
+        metric = serializer.save(
+            couple=couple,
+            template=None,
+            created_by=request.user,
+            sort_order=sort_order,
+        )
+
+        MetricImportance.objects.create(
+            metric=metric,
+            user=request.user,
+            importance=100,
+        )
+
+        partner = (
+            couple.members
+            .exclude(user=request.user)
+            .select_related('user')
+            .first()
+        )
+
+        if partner is not None:
+            MetricImportance.objects.create(
+                metric=metric,
+                user=partner.user,
+                importance=100,
+            )
+
+        return Response(
+            CoupleMetricSerializer(
+                metric,
+                context={'request': request},
+            ).data,
+            status=201,
+        )
 
 
 class MetricImportanceView(APIView):
