@@ -1,60 +1,44 @@
-config/settings.py
-__pycache__/
+@"
+**pycache**/
 *.py[cod]
 *$py.class
-*.so
-.Python
-*.egg
-*.egg-info/
-dist/
-build/
-develop-eggs/
-.eggs/
-pip-wheel-metadata/
-*.egg-info/
 
-../.venv/
 venv/
+.venv/
 env/
 ENV/
-env.bak/
-venv.bak/
 
 *.log
 db.sqlite3
 db.sqlite3-journal
 
-# User-uploaded media
-media/
-
-# Collected static files
-staticfiles/
-
 .env
 .env.*
 !.env.example
 
+staticfiles/
+media/
+
 .idea/
-*.iml
-*.iws
-*.ipr
+.vscode/
 
 .DS_Store
 Thumbs.db
-Desktop.ini
 
 .coverage
-.coverage.*
 htmlcov/
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
 
-.ipynb_checkpoints/
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.egg
 
-*.tmp
-*.temp
-*.swp
-*.swo
-*~
+local_settings.py
+config/settings.py
 
+frontend/node_modules/
+frontend/dist/
+"@ | Set-Content .gitignore
