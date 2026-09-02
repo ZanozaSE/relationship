@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout'
 import LoginPage from './pages/LoginPage'
+import MetricsPage from './pages/MetricsPage'
 import NewMetricPage from './pages/NewMetricPage'
 import { useAuth } from './auth/AuthContext.jsx'
 
@@ -52,7 +53,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<PlaceholderPage title="Главная" />} />
-          <Route path="/metrics" element={<PlaceholderPage title="Метрики" />} />
+          <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/metrics/new" element={<NewMetricPage />} />
           <Route path="/history" element={<PlaceholderPage title="История" />} />
           <Route path="/profile" element={<PlaceholderPage title="Профиль" />} />
