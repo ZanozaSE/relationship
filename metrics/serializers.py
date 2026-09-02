@@ -41,24 +41,28 @@ class CreateCoupleMetricSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
+        scale_type = attrs['scale_type']
         min_value = attrs['min_value']
         max_value = attrs['max_value']
         target_value = attrs['target_value']
 
-        if min_value >= max_value:
-            raise serializers.ValidationError(
-                'Минимальное значение должно быть меньше максимального.'
-            )
-
-        if not min_value <= target_value <= max_value:
-            raise serializers.ValidationError(
-                'Оптимальное значение должно находиться внутри диапазона шкалы.'
-            )
-
-        if attrs['scale_type'] == CoupleMetric.ScaleType.BALANCE:
+        if scale_type == CoupleMetric.ScaleType.BALANCE:
             if min_value != -99 or max_value != 99:
                 raise serializers.ValidationError(
-                    'Для шкалы «Баланс» допустим только диапазон от -99 до 99.'
+                    'Для шкалы «Баланс» диапазон строго от -99 до 99.'
+                )
+            if target_value != 0:
+                raise serializers.ValidationError(
+                    'Для шкалы «Баланс» оптимальное значение строго равно 0.'
+                )
+        elif scale_type == CoupleMetric.ScaleType.LEVEL:
+            if min_value != 1 or max_value != 100:
+                raise serializers.ValidationError(
+                    'Для шкалы «Уровень» диапазон строго от 1 до 100.'
+                )
+            if target_value != 100:
+                raise serializers.ValidationError(
+                    'Для шкалы «Уровень» оптимальное значение строго равно 100.'
                 )
 
         if not attrs['name'].strip():
