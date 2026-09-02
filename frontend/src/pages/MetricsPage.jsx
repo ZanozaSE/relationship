@@ -144,13 +144,13 @@ function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
           <button type="button" className="metric-delete-button" onClick={deleteMetric} disabled={isDeleting || isSaving || isSavingImportance} aria-label={`Удалить метрику «${metric.name}»`} title="Удалить метрику">
             <Trash2 size={16} />
           </button>
-          <span className="metric-importance-value">{importance}%</span>
         </div>
       </div>
 
       <div className="metric-importance-control">
-        <div className="metric-importance-heading">
+        <div className="metric-control-heading">
           <span>Важность</span>
+          <span className="metric-control-value">{importance}%</span>
         </div>
         <div className="metric-stepper">
           <button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting} aria-label="Уменьшить важность">
@@ -167,11 +167,11 @@ function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
         </div>
       </div>
 
-      <div className="metric-satisfaction-only metric-importance-heading">
-        <span>Удовлетворённость</span>
-        <span style={{ color: '#f05ba7', fontSize: '16px', fontWeight: 700, lineHeight: 1.2 }}>
-          {satisfaction == null ? '—' : `${satisfaction}%`}
-        </span>
+      <div className="metric-satisfaction-control">
+        <div className="metric-control-heading">
+          <span>Удовлетворённость</span>
+          <span className="metric-control-value">{satisfaction == null ? '—' : `${satisfaction}%`}</span>
+        </div>
       </div>
 
       <div className="metric-slider-area">
