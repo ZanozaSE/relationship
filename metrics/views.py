@@ -24,22 +24,10 @@ class MyMetricsView(APIView):
         couple = get_user_couple(request.user)
 
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=404
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
-        metrics = CoupleMetric.objects.filter(
-            couple=couple,
-            is_active=True
-        )
-
-        serializer = CoupleMetricSerializer(
-            metrics,
-            many=True,
-            context={'request': request},
-        )
-
+        metrics = CoupleMetric.objects.filter(couple=couple, is_active=True)
+        serializer = CoupleMetricSerializer(metrics, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -50,17 +38,13 @@ class CreateMetricView(APIView):
         couple = get_user_couple(request.user)
 
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=404,
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
         serializer = CreateCoupleMetricSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         last_metric = (
-            CoupleMetric.objects
-            .filter(couple=couple)
+            CoupleMetric.objects.filter(couple=couple)
             .order_by('-sort_order', '-id')
             .first()
         )
@@ -73,31 +57,16 @@ class CreateMetricView(APIView):
             sort_order=sort_order,
         )
 
-        MetricImportance.objects.create(
-            metric=metric,
-            user=request.user,
-            importance=100,
-        )
+        MetricImportance.objects.create(metric=metric, user=request.user, importance=100)
 
         partner = (
-            couple.members
-            .exclude(user=request.user)
-            .select_related('user')
-            .first()
+            couple.members.exclude(user=request.user).select_related('user').first()
         )
-
         if partner is not None:
-            MetricImportance.objects.create(
-                metric=metric,
-                user=partner.user,
-                importance=100,
-            )
+            MetricImportance.objects.create(metric=metric, user=partner.user, importance=100)
 
         return Response(
-            CoupleMetricSerializer(
-                metric,
-                context={'request': request},
-            ).data,
+            CoupleMetricSerializer(metric, context={'request': request}).data,
             status=201,
         )
 
@@ -109,22 +78,12 @@ class MetricImportanceView(APIView):
         couple = get_user_couple(request.user)
 
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=404
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
         try:
-            metric = CoupleMetric.objects.get(
-                id=metric_id,
-                couple=couple,
-                is_active=True,
-            )
+            metric = CoupleMetric.objects.get(id=metric_id, couple=couple, is_active=True)
         except CoupleMetric.DoesNotExist:
-            return Response(
-                {'detail': 'Метрика не найдена.'},
-                status=404
-            )
+            return Response({'detail': 'Метрика не найдена.'}, status=404)
 
         importance, _ = MetricImportance.objects.get_or_create(
             metric=metric,
@@ -132,14 +91,9 @@ class MetricImportanceView(APIView):
             defaults={'importance': 100},
         )
 
-        serializer = MetricImportanceSerializer(
-            importance,
-            data=request.data,
-            partial=True,
-        )
+        serializer = MetricImportanceSerializer(importance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         return Response(serializer.data)
 
 
@@ -150,10 +104,31 @@ class MetricValueView(APIView):
         couple = get_user_couple(request.user)
 
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=404
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
+
+        try:
+            metric = CoupleMetric.objects.get(id=metric_id, couple=couple, is_active=True)
+        except CoupleMetric.DoesNotExist:
+            return Response({'detail': 'Метрика не найдена.'}, status=404)
+
+        serializer = MetricValueSerializer(data=request.data, context={'metric': metric})
+        serializer.is_valid(raise_exception=True)
+        metric_value = serializer.save(metric=metric, user=request.user)
+
+        return Response(
+            MetricValueSerializer(metric_value, context={'metric': metric}).data,
+            status=201,
+        )
+
+
+class DeleteMetricView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, metric_id):
+        couple = get_user_couple(request.user)
+
+        if couple is None:
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
         try:
             metric = CoupleMetric.objects.get(
@@ -162,29 +137,11 @@ class MetricValueView(APIView):
                 is_active=True,
             )
         except CoupleMetric.DoesNotExist:
-            return Response(
-                {'detail': 'Метрика не найдена.'},
-                status=404
-            )
+            return Response({'detail': 'Метрика не найдена.'}, status=404)
 
-        serializer = MetricValueSerializer(
-            data=request.data,
-            context={'metric': metric},
-        )
-        serializer.is_valid(raise_exception=True)
-
-        metric_value = serializer.save(
-            metric=metric,
-            user=request.user,
-        )
-
-        return Response(
-            MetricValueSerializer(
-                metric_value,
-                context={'metric': metric},
-            ).data,
-            status=201,
-        )
+        metric.is_active = False
+        metric.save(update_fields=['is_active'])
+        return Response(status=204)
 
 
 class MetricValueHistoryView(APIView):
@@ -194,33 +151,18 @@ class MetricValueHistoryView(APIView):
         couple = get_user_couple(request.user)
 
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=404
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
         try:
-            metric = CoupleMetric.objects.get(
-                id=metric_id,
-                couple=couple,
-            )
+            metric = CoupleMetric.objects.get(id=metric_id, couple=couple)
         except CoupleMetric.DoesNotExist:
-            return Response(
-                {'detail': 'Метрика не найдена.'},
-                status=404
-            )
+            return Response({'detail': 'Метрика не найдена.'}, status=404)
 
         values = MetricValue.objects.filter(
             metric=metric,
             user=request.user,
         ).order_by('-created_at', '-id')
-
-        serializer = MetricValueSerializer(
-            values,
-            many=True,
-            context={'metric': metric},
-        )
-
+        serializer = MetricValueSerializer(values, many=True, context={'metric': metric})
         return Response(serializer.data)
 
 
@@ -231,27 +173,17 @@ class RelationshipSatisfactionView(APIView):
         couple = get_user_couple(request.user)
 
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=404
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
         partner = (
-            couple.members
-            .exclude(user=request.user)
-            .select_related('user')
-            .first()
+            couple.members.exclude(user=request.user).select_related('user').first()
         )
 
         return Response({
-            'my_satisfaction': calculate_relationship_satisfaction(
-                request.user,
-                couple,
-            ),
+            'my_satisfaction': calculate_relationship_satisfaction(request.user, couple),
             'partner_satisfaction': (
                 calculate_relationship_satisfaction(partner.user, couple)
-                if partner is not None
-                else None
+                if partner is not None else None
             ),
         })
 
@@ -263,59 +195,29 @@ class RelationshipSatisfactionHistoryView(APIView):
         couple = get_user_couple(request.user)
 
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=404
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
         period = request.query_params.get('period', '7')
         allowed_periods = {7, 30, 365}
-
         try:
             days = int(period)
         except (TypeError, ValueError):
-            return Response(
-                {'detail': 'Период должен быть равен 7, 30 или 365 дням.'},
-                status=400,
-            )
+            return Response({'detail': 'Период должен быть равен 7, 30 или 365 дням.'}, status=400)
 
         if days not in allowed_periods:
-            return Response(
-                {'detail': 'Период должен быть равен 7, 30 или 365 дням.'},
-                status=400,
-            )
+            return Response({'detail': 'Период должен быть равен 7, 30 или 365 дням.'}, status=400)
 
         partner = (
-            couple.members
-            .exclude(user=request.user)
-            .select_related('user')
-            .first()
+            couple.members.exclude(user=request.user).select_related('user').first()
         )
-
-        my_history = calculate_relationship_satisfaction_history(
-            request.user,
-            couple,
-            days,
-        )
-
+        my_history = calculate_relationship_satisfaction_history(request.user, couple, days)
         partner_history = (
-            calculate_relationship_satisfaction_history(
-                partner.user,
-                couple,
-                days,
-            )
+            calculate_relationship_satisfaction_history(partner.user, couple, days)
             if partner is not None
-            else [
-                {'date': point['date'], 'satisfaction': None}
-                for point in my_history
-            ]
+            else [{'date': point['date'], 'satisfaction': None} for point in my_history]
         )
 
-        partner_by_date = {
-            point['date']: point['satisfaction']
-            for point in partner_history
-        }
-
+        partner_by_date = {point['date']: point['satisfaction'] for point in partner_history}
         points = [
             {
                 'date': point['date'],
@@ -324,8 +226,4 @@ class RelationshipSatisfactionHistoryView(APIView):
             }
             for point in my_history
         ]
-
-        return Response({
-            'period': days,
-            'points': points,
-        })
+        return Response({'period': days, 'points': points})
