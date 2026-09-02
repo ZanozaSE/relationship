@@ -3,69 +3,116 @@ import { RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { apiFetch } from '../api'
 
 function formatValue(metric, value) {
-  if (value === null || value === undefined) {
-    return '—'
-  }
-
+  if (value === null || value === undefined) return '—'
   return metric.scale_type === 'balance' && value > 0 ? `+${value}` : value
 }
 
-function MetricCard({ metric }) {
-  const hasValue = metric.latest_value !== null && metric.latest_value !== undefined
+function calculateSatisfaction(metric, value) {
+  if (value === null || value === undefined) return null
+  return Math.max(0, 100 - Math.abs(value - metric.target_value))
+}
+
+function MetricCard({ metric, onValueSaved }) {
+  const [value, setValue] = useState(metric.latest_value)
+  const [satisfaction, setSatisfaction] = useState(metric.latest_satisfaction)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  useEffect(() => {
+    setValue(metric.latest_value)
+    setSatisfaction(metric.latest_satisfaction)
+  }, [metric.latest_value, metric.latest_satisfaction])
+
   const range = metric.max_value - metric.min_value
-  const position = hasValue && range > 0
-    ? ((metric.latest_value - metric.min_value) / range) * 100
-    : 50
+  const currentValue = value ?? metric.target_value
+  const position = range > 0 ? ((currentValue - metric.min_value) / range) * 100 : 50
+  const targetPosition = range > 0 ? ((metric.target_value - metric.min_value) / range) * 100 : 50
+
+  async function saveValue(nextValue) {
+    setIsSaving(true)
+    setSaveError('')
+    try {
+      const response = await apiFetch(`/api/metrics/${metric.id}/value/`, {
+        method: 'POST',
+        body: JSON.stringify({ value: nextValue }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data.detail || data.value?.[0] || 'Не удалось сохранить значение.')
+      }
+      setValue(data.value)
+      setSatisfaction(data.satisfaction)
+      onValueSaved?.(metric.id, data)
+    } catch (requestError) {
+      setSaveError(requestError.message || 'Не удалось сохранить значение.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  function handleSliderChange(event) {
+    const nextValue = Number(event.target.value)
+    setValue(nextValue)
+    setSatisfaction(calculateSatisfaction(metric, nextValue))
+  }
+
+  function handleSliderCommit(event) {
+    saveValue(Number(event.target.value))
+  }
 
   return (
     <article className="metric-card">
       <div className="metric-card-header">
         <div className="metric-card-title-row">
-          <span className="metric-card-icon">
-            <SlidersHorizontal size={16} strokeWidth={1.8} />
-          </span>
+          <span className="metric-card-icon"><SlidersHorizontal size={16} strokeWidth={1.8} /></span>
           <h2>{metric.name}</h2>
         </div>
-        <span className="metric-importance">{metric.importance}%</span>
+        <span className="metric-importance">Важность {metric.importance}%</span>
       </div>
 
       <div className="metric-value-row">
         <div>
           <span className="metric-value-label">Текущее значение</span>
-          <strong className="metric-value">{formatValue(metric, metric.latest_value)}</strong>
+          <strong className="metric-value">{formatValue(metric, value)}</strong>
         </div>
         <div className="metric-satisfaction">
           <span>Удовлетворённость</span>
-          <strong>
-            {metric.latest_satisfaction === null || metric.latest_satisfaction === undefined
-              ? '—'
-              : `${metric.latest_satisfaction}%`}
-          </strong>
+          <strong>{satisfaction == null ? '—' : `${satisfaction}%`}</strong>
         </div>
       </div>
 
-      <div className="metric-scale">
+      <div className="metric-slider-area">
+        <div className="metric-slider-track">
+          <span className="metric-slider-fill" style={{ width: `${Math.max(0, Math.min(100, position))}%` }} />
+          <span className="metric-slider-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
+          <input
+            className="metric-slider"
+            type="range"
+            min={metric.min_value}
+            max={metric.max_value}
+            step="1"
+            value={currentValue}
+            onChange={handleSliderChange}
+            onMouseUp={handleSliderCommit}
+            onTouchEnd={handleSliderCommit}
+            aria-label={`Изменить значение метрики «${metric.name}»`}
+            disabled={isSaving}
+          />
+        </div>
         <div className="metric-scale-labels">
           <span>{metric.left_label}</span>
           <span>{metric.right_label}</span>
-        </div>
-        <div className="metric-scale-track">
-          <span
-            className="metric-scale-marker"
-            style={{ left: `${Math.max(0, Math.min(100, position))}%` }}
-          />
-          <span
-            className="metric-scale-target"
-            style={{
-              left: `${Math.max(0, Math.min(100, ((metric.target_value - metric.min_value) / range) * 100))}%`,
-            }}
-          />
         </div>
         <div className="metric-scale-values">
           <span>{metric.min_value}</span>
           <span>Оптимум {formatValue(metric, metric.target_value)}</span>
           <span>{metric.max_value}</span>
         </div>
+      </div>
+
+      <div className="metric-card-footer">
+        <span>{isSaving ? 'Сохраняем…' : 'Потяните ползунок, чтобы изменить значение'}</span>
+        {saveError && <span className="metric-save-error">{saveError}</span>}
       </div>
     </article>
   )
@@ -79,15 +126,10 @@ function MetricsPage() {
   async function loadMetrics() {
     setError('')
     setIsLoading(true)
-
     try {
       const response = await apiFetch('/api/metrics/')
       const data = await response.json().catch(() => [])
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Не удалось загрузить метрики.')
-      }
-
+      if (!response.ok) throw new Error(data.detail || 'Не удалось загрузить метрики.')
       setMetrics(Array.isArray(data) ? data : [])
     } catch (requestError) {
       setError(requestError.message || 'Не удалось загрузить метрики.')
@@ -96,9 +138,15 @@ function MetricsPage() {
     }
   }
 
-  useEffect(() => {
-    loadMetrics()
-  }, [])
+  function handleValueSaved(metricId, data) {
+    setMetrics((currentMetrics) => currentMetrics.map((metric) => (
+      metric.id === metricId
+        ? { ...metric, latest_value: data.value, latest_satisfaction: data.satisfaction }
+        : metric
+    )))
+  }
+
+  useEffect(() => { loadMetrics() }, [])
 
   return (
     <section className="page metrics-page">
@@ -106,46 +154,19 @@ function MetricsPage() {
         <div>
           <p className="page-eyebrow">Ваши показатели</p>
           <h1>Метрики</h1>
+          <p className="page-description">Оцените каждую область отношений. Значение можно изменить в любой момент.</p>
         </div>
-        <button
-          type="button"
-          className="icon-button"
-          onClick={loadMetrics}
-          disabled={isLoading}
-          aria-label="Обновить метрики"
-        >
+        <button type="button" className="icon-button" onClick={loadMetrics} disabled={isLoading} aria-label="Обновить метрики">
           <RefreshCw size={18} className={isLoading ? 'spin' : ''} />
         </button>
       </div>
 
-      {isLoading && (
-        <div className="metrics-state">
-          <span className="state-dot" />
-          <p>Загружаем ваши метрики…</p>
-        </div>
-      )}
-
-      {!isLoading && error && (
-        <div className="metrics-state error-state">
-          <p>{error}</p>
-          <button type="button" className="secondary-button" onClick={loadMetrics}>
-            Повторить
-          </button>
-        </div>
-      )}
-
-      {!isLoading && !error && metrics.length === 0 && (
-        <div className="metrics-state">
-          <p>Пока нет активных метрик.</p>
-          <p className="state-hint">Создайте первую с помощью кнопки «+».</p>
-        </div>
-      )}
-
+      {isLoading && <div className="metrics-state"><span className="state-dot" /><p>Загружаем ваши метрики…</p></div>}
+      {!isLoading && error && <div className="metrics-state error-state"><p>{error}</p><button type="button" className="secondary-button" onClick={loadMetrics}>Повторить</button></div>}
+      {!isLoading && !error && metrics.length === 0 && <div className="metrics-state"><p>Пока нет активных метрик.</p><p className="state-hint">Создайте первую с помощью кнопки «+».</p></div>}
       {!isLoading && !error && metrics.length > 0 && (
         <div className="metrics-list">
-          {metrics.map((metric) => (
-            <MetricCard key={metric.id} metric={metric} />
-          ))}
+          {metrics.map((metric) => <MetricCard key={metric.id} metric={metric} onValueSaved={handleValueSaved} />)}
         </div>
       )}
     </section>
