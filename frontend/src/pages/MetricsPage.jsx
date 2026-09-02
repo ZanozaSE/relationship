@@ -60,6 +60,7 @@ function MetricCard({ metric, onValueSaved }) {
 
   async function saveImportance(nextImportance) {
     setIsSavingImportance(true)
+    setSaveError('')
     try {
       const response = await apiFetch(`/api/metrics/${metric.id}/importance/`, {
         method: 'PATCH',
@@ -95,6 +96,12 @@ function MetricCard({ metric, onValueSaved }) {
 
   function handleImportanceCommit(event) {
     saveImportance(Number(event.target.value))
+  }
+
+  function selectOptimalValue() {
+    setValue(metric.target_value)
+    setSatisfaction(calculateSatisfaction(metric, metric.target_value))
+    saveValue(metric.target_value)
   }
 
   return (
@@ -142,7 +149,14 @@ function MetricCard({ metric, onValueSaved }) {
       <div className="metric-slider-area">
         <div className="metric-slider-track">
           <span className="metric-slider-fill" style={{ width: `${Math.max(0, Math.min(100, position))}%` }} />
-          <span className="metric-slider-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
+          <button
+            type="button"
+            className="metric-slider-target"
+            style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }}
+            onClick={selectOptimalValue}
+            aria-label={`Выбрать оптимальное значение ${formatValue(metric, metric.target_value)} для метрики «${metric.name}»`}
+            disabled={isSaving}
+          />
           <input
             className="metric-slider"
             type="range"
