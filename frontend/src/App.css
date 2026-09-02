@@ -18,6 +18,12 @@
 .metric-card-title-row { min-width:0; gap:10px; }
 .metric-card-title-row h2 { margin:0; color:#f5f2f7; font-size:15px; font-weight:650; line-height:1.35; }
 .metric-card-icon { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; flex:0 0 34px; color:#f05ba7; background:rgba(240,91,167,.09); border:1px solid rgba(240,91,167,.15); border-radius:11px; }
+.metric-card-actions { display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+.metric-delete-button { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; color:rgba(245,242,247,.38); background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06); border-radius:9px; cursor:pointer; transition:color 160ms ease,background 160ms ease,border-color 160ms ease,transform 160ms ease; }
+.metric-delete-button:hover:not(:disabled) { color:#ff7187; background:rgba(255,80,105,.08); border-color:rgba(255,80,105,.3); transform:translateY(-1px); }
+.metric-delete-button:active:not(:disabled) { transform:scale(.95); }
+.metric-delete-button:disabled { cursor:wait; opacity:.45; }
+.metric-card-deleting { opacity:.55; pointer-events:none; }
 .metric-importance-value { flex:0 0 auto; min-width:48px; color:#f05ba7; font-size:13px; font-weight:700; text-align:right; }
 .metric-importance-control { margin-top:12px; }
 .metric-importance-heading { justify-content:space-between; color:rgba(245,242,247,.38); font-size:9px; }
