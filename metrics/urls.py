@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     MetricImportanceView,
+    MetricValueView,
     MyMetricsView,
     RelationshipSatisfactionView,
 )
@@ -13,6 +14,11 @@ urlpatterns = [
         '<int:metric_id>/importance/',
         MetricImportanceView.as_view(),
         name='metric_importance',
+    ),
+    path(
+        '<int:metric_id>/value/',
+        MetricValueView.as_view(),
+        name='metric_value',
     ),
     path(
         'satisfaction/',
