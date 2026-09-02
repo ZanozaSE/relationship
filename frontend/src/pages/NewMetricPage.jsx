@@ -16,41 +16,89 @@ function NewMetricPage() {
   const [leftLabel, setLeftLabel] = useState('Мало')
   const [rightLabel, setRightLabel] = useState('Много')
   const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [success, setSuccess] = useState('')
 
-  function handleSubmit(event) {
-    event.preventDefault()
-    setError('')
-
+  function validate() {
     const min = Number(minValue)
     const max = Number(maxValue)
     const target = Number(targetValue)
 
     if (!name.trim()) {
-      setError('Введите название метрики.')
-      return
+      return 'Введите название метрики.'
     }
 
     if (!Number.isFinite(min) || !Number.isFinite(max) || !Number.isFinite(target)) {
-      setError('Значения шкалы должны быть числами.')
-      return
+      return 'Значения шкалы должны быть числами.'
     }
 
     if (min >= max) {
-      setError('Минимальное значение должно быть меньше максимального.')
-      return
+      return 'Минимальное значение должно быть меньше максимального.'
     }
 
     if (target < min || target > max) {
-      setError('Оптимальное значение должно находиться внутри диапазона шкалы.')
-      return
+      return 'Оптимальное значение должно находиться внутри диапазона шкалы.'
+    }
+
+    if (scaleType === 'balance' && (min !== -99 || max !== 99)) {
+      return 'Для шкалы «Баланс» допустим только диапазон от -99 до 99.'
     }
 
     if (!leftLabel.trim() || !rightLabel.trim()) {
-      setError('Заполните подписи обоих полюсов шкалы.')
+      return 'Заполните подписи обоих полюсов шкалы.'
+    }
+
+    return ''
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setError('')
+    setSuccess('')
+
+    const validationError = validate()
+    if (validationError) {
+      setError(validationError)
       return
     }
 
-    setError('Сохранение метрик будет подключено после добавления API создания метрики на backend.')
+    setIsSaving(true)
+
+    try {
+      const response = await fetch('/api/metrics/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          scale_type: scaleType,
+          min_value: Number(minValue),
+          max_value: Number(maxValue),
+          target_value: Number(targetValue),
+          left_label: leftLabel.trim(),
+          right_label: rightLabel.trim(),
+        }),
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        const serverError =
+          data.detail ||
+          data.name?.[0] ||
+          data.non_field_errors?.[0] ||
+          'Не удалось сохранить метрику.'
+        throw new Error(serverError)
+      }
+
+      setSuccess(`Метрика «${data.name}» создана.`)
+      setTimeout(() => navigate('/metrics'), 500)
+    } catch (requestError) {
+      setError(requestError.message || 'Не удалось сохранить метрику.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -75,7 +123,8 @@ function NewMetricPage() {
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Например, Эмоциональная близость"
-            maxLength={120}
+            maxLength={100}
+            disabled={isSaving}
           />
         </label>
 
@@ -97,6 +146,7 @@ function NewMetricPage() {
                   value={type.value}
                   checked={scaleType === type.value}
                   onChange={(event) => setScaleType(event.target.value)}
+                  disabled={isSaving}
                 />
                 <span className="scale-option-content">
                   <strong>{type.label}</strong>
@@ -120,6 +170,7 @@ function NewMetricPage() {
                 type="number"
                 value={minValue}
                 onChange={(event) => setMinValue(event.target.value)}
+                disabled={isSaving || scaleType === 'balance'}
               />
             </label>
 
@@ -129,6 +180,7 @@ function NewMetricPage() {
                 type="number"
                 value={maxValue}
                 onChange={(event) => setMaxValue(event.target.value)}
+                disabled={isSaving || scaleType === 'balance'}
               />
             </label>
           </div>
@@ -139,6 +191,7 @@ function NewMetricPage() {
               type="number"
               value={targetValue}
               onChange={(event) => setTargetValue(event.target.value)}
+              disabled={isSaving}
             />
           </label>
         </div>
@@ -156,7 +209,8 @@ function NewMetricPage() {
                 type="text"
                 value={leftLabel}
                 onChange={(event) => setLeftLabel(event.target.value)}
-                maxLength={60}
+                maxLength={50}
+                disabled={isSaving}
               />
             </label>
 
@@ -166,16 +220,18 @@ function NewMetricPage() {
                 type="text"
                 value={rightLabel}
                 onChange={(event) => setRightLabel(event.target.value)}
-                maxLength={60}
+                maxLength={50}
+                disabled={isSaving}
               />
             </label>
           </div>
         </div>
 
-        {error && <p className="form-message">{error}</p>}
+        {error && <p className="form-message error">{error}</p>}
+        {success && <p className="form-message success">{success}</p>}
 
-        <button type="submit" className="primary-button">
-          Сохранить метрику
+        <button type="submit" className="primary-button" disabled={isSaving}>
+          {isSaving ? 'Сохранение…' : 'Сохранить метрику'}
         </button>
       </form>
     </section>
