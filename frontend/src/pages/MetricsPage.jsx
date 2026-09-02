@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Minus, Plus, RefreshCw, SlidersHorizontal } from 'lucide-react'
+import { Minus, Plus, RefreshCw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { apiFetch } from '../api'
 
 const BALANCE_MIN = -99
@@ -16,13 +16,14 @@ function calculateSatisfaction(metric, value) {
   return Math.max(0, 100 - Math.abs(value - metric.target_value))
 }
 
-function MetricCard({ metric, onValueSaved }) {
+function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
   const [value, setValue] = useState(metric.latest_value)
   const [satisfaction, setSatisfaction] = useState(metric.latest_satisfaction)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [importance, setImportance] = useState(metric.importance ?? 100)
   const [isSavingImportance, setIsSavingImportance] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const valueSaveTimerRef = useRef(null)
   const importanceSaveTimerRef = useRef(null)
 
@@ -53,9 +54,7 @@ function MetricCard({ metric, onValueSaved }) {
         body: JSON.stringify({ value: nextValue }),
       })
       const data = await response.json().catch(() => ({}))
-      if (!response.ok) {
-        throw new Error(data.detail || data.value?.[0] || 'Не удалось сохранить значение.')
-      }
+      if (!response.ok) throw new Error(data.detail || data.value?.[0] || 'Не удалось сохранить значение.')
       setValue(data.value)
       setSatisfaction(data.satisfaction)
       onValueSaved?.(metric.id, data)
@@ -75,9 +74,7 @@ function MetricCard({ metric, onValueSaved }) {
         body: JSON.stringify({ importance: nextImportance }),
       })
       const data = await response.json().catch(() => ({}))
-      if (!response.ok) {
-        throw new Error(data.detail || data.importance?.[0] || 'Не удалось сохранить важность.')
-      }
+      if (!response.ok) throw new Error(data.detail || data.importance?.[0] || 'Не удалось сохранить важность.')
       setImportance(data.importance ?? nextImportance)
     } catch (requestError) {
       setSaveError(requestError.message || 'Не удалось сохранить важность.')
@@ -89,21 +86,17 @@ function MetricCard({ metric, onValueSaved }) {
 
   function scheduleValueSave(nextValue) {
     if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
-    valueSaveTimerRef.current = setTimeout(() => {
-      saveValue(nextValue)
-    }, SAVE_DEBOUNCE_MS)
+    valueSaveTimerRef.current = setTimeout(() => saveValue(nextValue), SAVE_DEBOUNCE_MS)
   }
 
   function scheduleImportanceSave(nextImportance) {
     if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
-    importanceSaveTimerRef.current = setTimeout(() => {
-      saveImportance(nextImportance)
-    }, SAVE_DEBOUNCE_MS)
+    importanceSaveTimerRef.current = setTimeout(() => saveImportance(nextImportance), SAVE_DEBOUNCE_MS)
   }
 
   function changeValue(delta) {
     const nextValue = Math.max(minValue, Math.min(maxValue, currentValue + delta))
-    if (nextValue === currentValue || isSaving) return
+    if (nextValue === currentValue || isSaving || isDeleting) return
     setValue(nextValue)
     setSatisfaction(calculateSatisfaction(metric, nextValue))
     scheduleValueSave(nextValue)
@@ -111,19 +104,48 @@ function MetricCard({ metric, onValueSaved }) {
 
   function changeImportance(delta) {
     const nextImportance = Math.max(0, Math.min(200, importance + delta))
-    if (nextImportance === importance || isSavingImportance) return
+    if (nextImportance === importance || isSavingImportance || isDeleting) return
     setImportance(nextImportance)
     scheduleImportanceSave(nextImportance)
   }
 
+  async function deleteMetric() {
+    if (isDeleting || isSaving || isSavingImportance) return
+
+    const confirmed = window.confirm(`Удалить метрику «${metric.name}»?\n\nОна исчезнет из списка, а история значений сохранится.`)
+    if (!confirmed) return
+
+    setIsDeleting(true)
+    setSaveError('')
+    if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
+    if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
+
+    try {
+      const response = await apiFetch(`/api/metrics/${metric.id}/delete/`, {
+        method: 'DELETE',
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.detail || 'Не удалось удалить метрику.')
+      onMetricDeleted?.(metric.id)
+    } catch (requestError) {
+      setSaveError(requestError.message || 'Не удалось удалить метрику.')
+      setIsDeleting(false)
+    }
+  }
+
   return (
-    <article className="metric-card">
+    <article className={`metric-card${isDeleting ? ' metric-card-deleting' : ''}`}>
       <div className="metric-card-header">
         <div className="metric-card-title-row">
           <span className="metric-card-icon"><SlidersHorizontal size={16} strokeWidth={1.8} /></span>
           <h2>{metric.name}</h2>
         </div>
-        <span className="metric-importance-value">{importance}%</span>
+        <div className="metric-card-actions">
+          <button type="button" className="metric-delete-button" onClick={deleteMetric} disabled={isDeleting || isSaving || isSavingImportance} aria-label={`Удалить метрику «${metric.name}»`} title="Удалить метрику">
+            <Trash2 size={16} />
+          </button>
+          <span className="metric-importance-value">{importance}%</span>
+        </div>
       </div>
 
       <div className="metric-importance-control">
@@ -133,26 +155,15 @@ function MetricCard({ metric, onValueSaved }) {
           <span>200%</span>
         </div>
         <div className="metric-stepper">
-          <button
-            type="button"
-            className="metric-step-button"
-            onClick={() => changeImportance(-1)}
-            disabled={isSavingImportance || importance <= 0}
-            aria-label="Уменьшить важность"
-          >
+          <button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting} aria-label="Уменьшить важность">
             <Minus size={16} />
           </button>
           <div className="metric-step-track" aria-hidden="true">
             <span className="metric-step-fill" style={{ width: `${(importance / 200) * 100}%` }} />
             <span className="metric-step-target" style={{ left: '50%' }} />
+            <span className="metric-step-thumb" style={{ left: `${(importance / 200) * 100}%` }} />
           </div>
-          <button
-            type="button"
-            className="metric-step-button"
-            onClick={() => changeImportance(1)}
-            disabled={isSavingImportance || importance >= 200}
-            aria-label="Увеличить важность"
-          >
+          <button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting} aria-label="Увеличить важность">
             <Plus size={16} />
           </button>
         </div>
@@ -171,26 +182,15 @@ function MetricCard({ metric, onValueSaved }) {
 
       <div className="metric-slider-area">
         <div className="metric-stepper metric-value-stepper">
-          <button
-            type="button"
-            className="metric-step-button metric-value-step-button"
-            onClick={() => changeValue(-1)}
-            disabled={isSaving || currentValue <= minValue}
-            aria-label={`Уменьшить значение метрики «${metric.name}»`}
-          >
+          <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(-1)} disabled={isSaving || currentValue <= minValue || isDeleting} aria-label={`Уменьшить значение метрики «${metric.name}»`}>
             <Minus size={18} />
           </button>
-          <div className="metric-step-track" aria-hidden="true">
+          <div className="metric-step-track metric-value-track" aria-hidden="true">
             <span className="metric-step-fill" style={{ width: `${Math.max(0, Math.min(100, position))}%` }} />
             <span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
+            <span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} />
           </div>
-          <button
-            type="button"
-            className="metric-step-button metric-value-step-button"
-            onClick={() => changeValue(1)}
-            disabled={isSaving || currentValue >= maxValue}
-            aria-label={`Увеличить значение метрики «${metric.name}»`}
-          >
+          <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(1)} disabled={isSaving || currentValue >= maxValue || isDeleting} aria-label={`Увеличить значение метрики «${metric.name}»`}>
             <Plus size={18} />
           </button>
         </div>
@@ -233,6 +233,10 @@ function MetricsPage() {
     )))
   }
 
+  function handleMetricDeleted(metricId) {
+    setMetrics((currentMetrics) => currentMetrics.filter((metric) => metric.id !== metricId))
+  }
+
   useEffect(() => { loadMetrics() }, [])
 
   return (
@@ -252,7 +256,14 @@ function MetricsPage() {
       {!isLoading && !error && metrics.length === 0 && <div className="metrics-state"><p>Пока нет активных метрик.</p><p className="state-hint">Создайте первую с помощью кнопки «+».</p></div>}
       {!isLoading && !error && metrics.length > 0 && (
         <div className="metrics-list">
-          {metrics.map((metric) => <MetricCard key={metric.id} metric={metric} onValueSaved={handleValueSaved} />)}
+          {metrics.map((metric) => (
+            <MetricCard
+              key={metric.id}
+              metric={metric}
+              onValueSaved={handleValueSaved}
+              onMetricDeleted={handleMetricDeleted}
+            />
+          ))}
         </div>
       )}
     </section>
