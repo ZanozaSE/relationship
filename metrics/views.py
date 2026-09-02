@@ -124,6 +124,43 @@ class MetricValueView(APIView):
         )
 
 
+class MetricValueHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, metric_id):
+        couple = get_user_couple(request.user)
+
+        if couple is None:
+            return Response(
+                {'detail': 'Пользователь не состоит в паре.'},
+                status=404
+            )
+
+        try:
+            metric = CoupleMetric.objects.get(
+                id=metric_id,
+                couple=couple,
+            )
+        except CoupleMetric.DoesNotExist:
+            return Response(
+                {'detail': 'Метрика не найдена.'},
+                status=404
+            )
+
+        values = MetricValue.objects.filter(
+            metric=metric,
+            user=request.user,
+        ).order_by('-created_at', '-id')
+
+        serializer = MetricValueSerializer(
+            values,
+            many=True,
+            context={'metric': metric},
+        )
+
+        return Response(serializer.data)
+
+
 class RelationshipSatisfactionView(APIView):
     permission_classes = [IsAuthenticated]
 
