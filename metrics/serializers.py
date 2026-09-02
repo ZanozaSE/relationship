@@ -25,3 +25,16 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         importance = obj.importance_settings.filter(user=user).first()
         return importance.importance if importance else 100
+
+
+class MetricImportanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetricImportance
+        fields = ('importance',)
+
+    def validate_importance(self, value):
+        if not 0 <= value <= 200:
+            raise serializers.ValidationError(
+                'Важность метрики должна быть в диапазоне от 0 до 200%.'
+            )
+        return value
