@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -90,6 +91,15 @@ class CoupleMetric(models.Model):
 
     is_active = models.BooleanField(
         default=True
+    )
+
+    importance = models.PositiveSmallIntegerField(
+        default=100,
+        validators=[
+            MinValueValidator(70),
+            MaxValueValidator(130),
+        ],
+        help_text='Вес метрики в процентах. Допустимый диапазон: 70–130%.',
     )
 
     created_by = models.ForeignKey(
