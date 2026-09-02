@@ -13,7 +13,7 @@
 .metrics-list { display:flex; flex-direction:column; gap:14px; }
 .metric-card { position:relative; overflow:hidden; padding:18px; background:linear-gradient(145deg,rgba(25,27,50,.92),rgba(15,17,35,.9)); border:1px solid rgba(255,255,255,.07); border-radius:21px; box-shadow:0 16px 36px rgba(0,0,0,.18); }
 .metric-card::before { position:absolute; top:0; left:0; width:70px; height:70px; background:radial-gradient(circle,rgba(240,91,167,.16),transparent 70%); content:''; pointer-events:none; }
-.metric-card-header,.metric-card-title-row,.metric-value-row,.metric-scale-labels,.metric-scale-values,.metric-importance-heading { display:flex; align-items:center; }
+.metric-card-header,.metric-card-title-row,.metric-value-row,.metric-scale-labels,.metric-scale-values { display:flex; align-items:center; }
 .metric-card-header { justify-content:space-between; gap:12px; }
 .metric-card-title-row { min-width:0; gap:10px; }
 .metric-card-title-row h2 { margin:0; color:#f5f2f7; font-size:15px; font-weight:650; line-height:1.35; }
@@ -24,10 +24,11 @@
 .metric-delete-button:active:not(:disabled) { transform:scale(.95); }
 .metric-delete-button:disabled { cursor:wait; opacity:.45; }
 .metric-card-deleting { opacity:.55; pointer-events:none; }
-.metric-importance-value { display:block; min-width:48px; color:#f05ba7; font-size:16px; font-weight:700; line-height:1.1; text-align:center; }
 .metric-importance-control { margin-top:12px; }
-.metric-importance-heading { justify-content:flex-start; color:rgba(245,242,247,.55); font-size:10px; font-weight:600; line-height:1.4; }
-.metric-stepper { display:grid; grid-template-columns:40px 1fr 40px; align-items:center; gap:10px; width:100%; margin-top:5px; }
+.metric-control-heading { display:grid; grid-template-columns:40px minmax(0,1fr) 40px; align-items:end; gap:10px; width:100%; color:rgba(245,242,247,.55); font-size:10px; font-weight:600; line-height:1.4; }
+.metric-control-heading > span:first-child { grid-column:1; min-width:0; }
+.metric-control-heading > span:last-child { grid-column:3; min-width:0; color:#f05ba7; font-size:16px; font-weight:700; line-height:1.2; text-align:center; }
+.metric-stepper { display:grid; grid-template-columns:40px minmax(0,1fr) 40px; align-items:center; gap:10px; width:100%; margin-top:5px; }
 .metric-step-button { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; padding:0; color:rgba(245,242,247,.82); background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:12px; cursor:pointer; transition:color 160ms ease,border-color 160ms ease,background 160ms ease,transform 160ms ease; }
 .metric-step-button:hover:not(:disabled) { color:#fff; background:rgba(240,91,167,.1); border-color:rgba(240,91,167,.35); transform:translateY(-1px); }
 .metric-step-button:active:not(:disabled) { transform:scale(.96); }
@@ -36,9 +37,7 @@
 .metric-step-fill { position:absolute; top:0; left:0; height:100%; background:linear-gradient(90deg,#8e2c69,#ec4899); border-radius:999px; }
 .metric-step-target { position:absolute; z-index:1; top:50%; width:3px; height:14px; background:rgba(255,255,255,.62); border-radius:3px; transform:translate(-50%,-50%); }
 .metric-step-thumb { position:absolute; z-index:2; top:50%; width:14px; height:14px; background:#fff; border:3px solid #ec4899; border-radius:50%; box-shadow:0 0 12px rgba(236,72,153,.55); transform:translate(-50%,-50%); transition:left 120ms ease; }
-.metric-satisfaction-only { margin-top:17px; text-align:left; }
-.metric-satisfaction-only > span { display:block; color:rgba(245,242,247,.55); font-size:10px; font-weight:600; line-height:1.4; }
-.metric-satisfaction-only > strong { display:block; margin-top:3px; color:#f05ba7; font-size:16px; font-weight:700; line-height:1.2; }
+.metric-satisfaction-control { margin-top:17px; }
 .metric-value-row { justify-content:space-between; gap:16px; margin-top:17px; }
 .metric-value-label,.metric-satisfaction span { display:block; color:rgba(245,242,247,.4); font-size:10px; line-height:1.4; }
 .metric-value { display:block; margin-top:3px; color:#fff; font-size:25px; font-weight:750; letter-spacing:-.03em; }
