@@ -16,7 +16,7 @@ function calculateSatisfaction(metric, value) {
   return Math.max(0, 100 - Math.abs(value - metric.target_value))
 }
 
-function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
+function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted }) {
   const [value, setValue] = useState(metric.latest_value)
   const [satisfaction, setSatisfaction] = useState(metric.latest_satisfaction)
   const [isSaving, setIsSaving] = useState(false)
@@ -30,8 +30,11 @@ function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
   useEffect(() => {
     setValue(metric.latest_value)
     setSatisfaction(metric.latest_satisfaction)
+  }, [metric.latest_value, metric.latest_satisfaction])
+
+  useEffect(() => {
     setImportance(metric.importance ?? 100)
-  }, [metric.latest_value, metric.latest_satisfaction, metric.importance])
+  }, [metric.id, metric.importance])
 
   useEffect(() => () => {
     if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
@@ -75,7 +78,9 @@ function MetricCard({ metric, onValueSaved, onMetricDeleted }) {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || data.importance?.[0] || 'Не удалось сохранить важность.')
-      setImportance(data.importance ?? nextImportance)
+      const savedImportance = data.importance ?? nextImportance
+      setImportance(savedImportance)
+      onImportanceSaved?.(metric.id, savedImportance)
     } catch (requestError) {
       setSaveError(requestError.message || 'Не удалось сохранить важность.')
       setImportance(metric.importance ?? 100)
@@ -227,6 +232,12 @@ function MetricsPage() {
     )))
   }
 
+  function handleImportanceSaved(metricId, importance) {
+    setMetrics((currentMetrics) => currentMetrics.map((metric) => (
+      metric.id === metricId ? { ...metric, importance } : metric
+    )))
+  }
+
   function handleMetricDeleted(metricId) {
     setMetrics((currentMetrics) => currentMetrics.filter((metric) => metric.id !== metricId))
   }
@@ -255,6 +266,7 @@ function MetricsPage() {
               key={metric.id}
               metric={metric}
               onValueSaved={handleValueSaved}
+              onImportanceSaved={handleImportanceSaved}
               onMetricDeleted={handleMetricDeleted}
             />
           ))}
