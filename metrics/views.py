@@ -10,7 +10,10 @@ from .serializers import (
     MetricImportanceSerializer,
     MetricValueSerializer,
 )
-from .services import calculate_relationship_satisfaction
+from .services import (
+    calculate_relationship_satisfaction,
+    calculate_relationship_satisfaction_history,
+)
 
 
 class MyMetricsView(APIView):
@@ -190,4 +193,79 @@ class RelationshipSatisfactionView(APIView):
                 if partner is not None
                 else None
             ),
+        })
+
+
+class RelationshipSatisfactionHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        couple = get_user_couple(request.user)
+
+        if couple is None:
+            return Response(
+                {'detail': 'Пользователь не состоит в паре.'},
+                status=404
+            )
+
+        period = request.query_params.get('period', '7')
+        allowed_periods = {7, 30, 365}
+
+        try:
+            days = int(period)
+        except (TypeError, ValueError):
+            return Response(
+                {'detail': 'Период должен быть равен 7, 30 или 365 дням.'},
+                status=400,
+            )
+
+        if days not in allowed_periods:
+            return Response(
+                {'detail': 'Период должен быть равен 7, 30 или 365 дням.'},
+                status=400,
+            )
+
+        partner = (
+            couple.members
+            .exclude(user=request.user)
+            .select_related('user')
+            .first()
+        )
+
+        my_history = calculate_relationship_satisfaction_history(
+            request.user,
+            couple,
+            days,
+        )
+
+        partner_history = (
+            calculate_relationship_satisfaction_history(
+                partner.user,
+                couple,
+                days,
+            )
+            if partner is not None
+            else [
+                {'date': point['date'], 'satisfaction': None}
+                for point in my_history
+            ]
+        )
+
+        partner_by_date = {
+            point['date']: point['satisfaction']
+            for point in partner_history
+        }
+
+        points = [
+            {
+                'date': point['date'],
+                'my_satisfaction': point['satisfaction'],
+                'partner_satisfaction': partner_by_date.get(point['date']),
+            }
+            for point in my_history
+        ]
+
+        return Response({
+            'period': days,
+            'points': points,
         })
