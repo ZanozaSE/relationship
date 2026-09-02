@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import CoupleMetric, MetricImportance
+from .models import CoupleMetric, MetricImportance, MetricValue
 
 
 class CoupleMetricSerializer(serializers.ModelSerializer):
@@ -37,4 +37,25 @@ class MetricImportanceSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Важность метрики должна быть в диапазоне от 0 до 200%.'
             )
+        return value
+
+
+class MetricValueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetricValue
+        fields = ('id', 'value', 'created_at', 'satisfaction')
+        read_only_fields = ('id', 'created_at', 'satisfaction')
+
+    def validate_value(self, value):
+        metric = self.context.get('metric')
+
+        if metric is None:
+            raise serializers.ValidationError('Метрика не определена.')
+
+        if not metric.min_value <= value <= metric.max_value:
+            raise serializers.ValidationError(
+                f'Значение должно быть в диапазоне от '
+                f'{metric.min_value} до {metric.max_value}.'
+            )
+
         return value
