@@ -6,6 +6,7 @@ from couples.services import get_user_couple
 
 from .models import CoupleMetric, MetricImportance
 from .serializers import CoupleMetricSerializer, MetricImportanceSerializer
+from .services import calculate_relationship_satisfaction
 
 
 class MyMetricsView(APIView):
@@ -27,7 +28,8 @@ class MyMetricsView(APIView):
 
         serializer = CoupleMetricSerializer(
             metrics,
-            many=True
+            many=True,
+            context={'request': request},
         )
 
         return Response(serializer.data)
@@ -72,3 +74,35 @@ class MetricImportanceView(APIView):
         serializer.save()
 
         return Response(serializer.data)
+
+
+class RelationshipSatisfactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        couple = get_user_couple(request.user)
+
+        if couple is None:
+            return Response(
+                {'detail': 'Пользователь не состоит в паре.'},
+                status=404
+            )
+
+        partner = (
+            couple.members
+            .exclude(user=request.user)
+            .select_related('user')
+            .first()
+        )
+
+        return Response({
+            'my_satisfaction': calculate_relationship_satisfaction(
+                request.user,
+                couple,
+            ),
+            'partner_satisfaction': (
+                calculate_relationship_satisfaction(partner.user, couple)
+                if partner is not None
+                else None
+            ),
+        })
