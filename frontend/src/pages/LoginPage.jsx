@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../api'
+import { getCurrentUser, login } from '../api'
+import { useAuth } from '../auth/AuthContext.jsx'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -22,6 +24,13 @@ function LoginPage() {
 
     try {
       await login(username.trim(), password)
+      const currentUser = await getCurrentUser()
+
+      if (!currentUser) {
+        throw new Error('Не удалось получить данные авторизованного пользователя.')
+      }
+
+      setUser(currentUser)
       navigate('/home', { replace: true })
     } catch (requestError) {
       setError(requestError.message || 'Не удалось выполнить вход.')
