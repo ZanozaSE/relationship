@@ -1,7 +1,7 @@
 import secrets
 from datetime import timedelta
 from django.db import transaction
-from metrics.models import MetricTemplate, CoupleMetric
+from metrics.models import MetricTemplate, CoupleMetric, MetricImportance
 from django.utils import timezone
 from .models import Couple, CoupleInvitation, CoupleMember
 
@@ -33,7 +33,7 @@ def create_couple(user):
         is_active=True
     )
 
-    CoupleMetric.objects.bulk_create([
+    metrics = [
         CoupleMetric(
             couple=couple,
             template=template,
@@ -45,10 +45,21 @@ def create_couple(user):
             left_label=template.left_label,
             right_label=template.right_label,
             sort_order=template.sort_order,
-            importance=100,
             created_by=user,
         )
         for template in templates
+    ]
+
+    CoupleMetric.objects.bulk_create(metrics)
+
+    created_metrics = CoupleMetric.objects.filter(couple=couple)
+    MetricImportance.objects.bulk_create([
+        MetricImportance(
+            metric=metric,
+            user=user,
+            importance=100,
+        )
+        for metric in created_metrics
     ])
 
     return couple, invitation
@@ -82,6 +93,16 @@ def join_couple(user, code):
 
     invitation.used_at = timezone.now()
     invitation.save(update_fields=['used_at'])
+
+    metrics = CoupleMetric.objects.filter(couple=invitation.couple)
+    MetricImportance.objects.bulk_create([
+        MetricImportance(
+            metric=metric,
+            user=user,
+            importance=100,
+        )
+        for metric in metrics
+    ])
 
     return invitation.couple
 
