@@ -4,8 +4,12 @@ from rest_framework.views import APIView
 
 from couples.services import get_user_couple
 
-from .models import CoupleMetric, MetricImportance
-from .serializers import CoupleMetricSerializer, MetricImportanceSerializer
+from .models import CoupleMetric, MetricImportance, MetricValue
+from .serializers import (
+    CoupleMetricSerializer,
+    MetricImportanceSerializer,
+    MetricValueSerializer,
+)
 from .services import calculate_relationship_satisfaction
 
 
@@ -74,6 +78,50 @@ class MetricImportanceView(APIView):
         serializer.save()
 
         return Response(serializer.data)
+
+
+class MetricValueView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, metric_id):
+        couple = get_user_couple(request.user)
+
+        if couple is None:
+            return Response(
+                {'detail': 'Пользователь не состоит в паре.'},
+                status=404
+            )
+
+        try:
+            metric = CoupleMetric.objects.get(
+                id=metric_id,
+                couple=couple,
+                is_active=True,
+            )
+        except CoupleMetric.DoesNotExist:
+            return Response(
+                {'detail': 'Метрика не найдена.'},
+                status=404
+            )
+
+        serializer = MetricValueSerializer(
+            data=request.data,
+            context={'metric': metric},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        metric_value = serializer.save(
+            metric=metric,
+            user=request.user,
+        )
+
+        return Response(
+            MetricValueSerializer(
+                metric_value,
+                context={'metric': metric},
+            ).data,
+            status=201,
+        )
 
 
 class RelationshipSatisfactionView(APIView):
