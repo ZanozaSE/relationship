@@ -16,4 +16,5 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
             'left_label',
             'right_label',
             'sort_order',
+            'importance',
         )
