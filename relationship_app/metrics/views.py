@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -162,6 +165,24 @@ class MetricValueHistoryView(APIView):
             metric=metric,
             user=request.user,
         ).order_by('-created_at', '-id')
+
+        period = request.query_params.get('period')
+        if period is not None:
+            allowed_periods = {7, 30, 365}
+            try:
+                days = int(period)
+            except (TypeError, ValueError):
+                return Response({'detail': 'Период должен быть равен 7, 30 или 365 дням.'}, status=400)
+
+            if days not in allowed_periods:
+                return Response({'detail': 'Период должен быть равен 7, 30 или 365 дням.'}, status=400)
+
+            start_date = timezone.localdate() - timedelta(days=days - 1)
+            start_datetime = timezone.make_aware(
+                datetime.combine(start_date, datetime.min.time())
+            )
+            values = values.filter(created_at__gte=start_datetime)
+
         serializer = MetricValueSerializer(values, many=True, context={'metric': metric})
         return Response(serializer.data)
 
