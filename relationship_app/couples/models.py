@@ -36,6 +36,8 @@ class CoupleMember(models.Model):
 
     def __str__(self):
         return f"{self.user} → {self.couple}"
+
+
 class CoupleInvitation(models.Model):
     couple = models.ForeignKey(
         Couple,
@@ -67,3 +69,75 @@ class CoupleInvitation(models.Model):
 
     def __str__(self):
         return self.code
+
+
+class CoupleGoal(models.Model):
+    couple = models.ForeignKey(
+        Couple,
+        on_delete=models.CASCADE,
+        related_name='goals'
+    )
+
+    title = models.CharField(max_length=120)
+
+    description = models.TextField(blank=True)
+
+    current_value = models.PositiveIntegerField(default=0)
+
+    target_value = models.PositiveIntegerField()
+
+    unit = models.CharField(max_length=30, blank=True)
+
+    deadline = models.DateField(null=True, blank=True)
+
+    is_completed = models.BooleanField(default=False)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_couple_goals'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['is_completed', '-created_at', '-id']
+
+    def __str__(self):
+        return f"{self.title} → Couple #{self.couple_id}"
+
+    @property
+    def progress(self):
+        if self.target_value <= 0:
+            return 100
+        return min(100, round(self.current_value / self.target_value * 100))
+
+
+class CoupleNote(models.Model):
+    couple = models.ForeignKey(
+        Couple,
+        on_delete=models.CASCADE,
+        related_name='notes'
+    )
+
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='couple_notes'
+    )
+
+    content = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at', '-id']
+
+    def __str__(self):
+        return f"Note #{self.id} → Couple #{self.couple_id}"
