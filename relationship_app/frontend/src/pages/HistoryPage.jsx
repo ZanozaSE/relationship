@@ -26,14 +26,6 @@ function formatSatisfaction(value) {
   return `${Number(value).toFixed(0)}%`
 }
 
-function isWithinPeriod(value, period) {
-  if (!value) return false
-  const timestamp = new Date(value).getTime()
-  if (Number.isNaN(timestamp)) return false
-  const cutoff = Date.now() - period * 24 * 60 * 60 * 1000
-  return timestamp >= cutoff
-}
-
 function HistoryPage() {
   const [period, setPeriod] = useState(30)
   const [satisfactionHistory, setSatisfactionHistory] = useState([])
@@ -63,15 +55,12 @@ function HistoryPage() {
 
       const histories = await Promise.all(
         (Array.isArray(metricsData) ? metricsData : []).map(async (metric) => {
-          const response = await apiFetch(`/api/metrics/${metric.id}/history/`)
+          const response = await apiFetch(`/api/metrics/${metric.id}/history/?period=${period}`)
           const data = await response.json().catch(() => [])
           if (!response.ok) {
             throw new Error(data.detail || `Не удалось загрузить историю метрики «${metric.name}».`)
           }
-          return {
-            metric,
-            values: Array.isArray(data) ? data : [],
-          }
+          return { metric, values: Array.isArray(data) ? data : [] }
         }),
       )
 
@@ -84,9 +73,7 @@ function HistoryPage() {
     }
   }
 
-  useEffect(() => {
-    loadHistory()
-  }, [period])
+  useEffect(() => { loadHistory() }, [period])
 
   const satisfactionChartData = useMemo(
     () => satisfactionHistory.map((point) => ({
@@ -103,235 +90,42 @@ function HistoryPage() {
   return (
     <section className="page history-page">
       <div className="page-heading history-page-heading">
-        <div>
-          <p className="page-eyebrow">Ваши изменения</p>
-          <h1>История</h1>
-        </div>
-        <button
-          type="button"
-          className="icon-button history-refresh-button"
-          onClick={loadHistory}
-          disabled={isLoading}
-          aria-label="Обновить историю"
-        >
+        <div><p className="page-eyebrow">Ваши изменения</p><h1>История</h1></div>
+        <button type="button" className="icon-button history-refresh-button" onClick={loadHistory} disabled={isLoading} aria-label="Обновить историю">
           <RefreshCw size={18} className={isLoading ? 'spin' : ''} />
         </button>
       </div>
 
-      {isLoading && (
-        <div className="history-state">
-          <span className="state-dot" />
-          <p>Загружаем историю…</p>
-        </div>
-      )}
-
-      {!isLoading && error && (
-        <div className="history-state error-state">
-          <p>{error}</p>
-          <button type="button" className="secondary-button" onClick={loadHistory}>
-            Повторить
-          </button>
-        </div>
-      )}
+      {isLoading && <div className="history-state"><span className="state-dot" /><p>Загружаем историю…</p></div>}
+      {!isLoading && error && <div className="history-state error-state"><p>{error}</p><button type="button" className="secondary-button" onClick={loadHistory}>Повторить</button></div>}
 
       {!isLoading && !error && (
         <div className="history-content">
           <section className="history-overview-card">
             <div className="history-card-header">
-              <div className="history-card-title">
-                <div className="history-card-icon">
-                  <TrendingUp size={18} />
-                </div>
-                <div>
-                  <h2>Общая удовлетворённость</h2>
-                  <p>Как менялось состояние отношений</p>
-                </div>
-              </div>
-
+              <div className="history-card-title"><div className="history-card-icon"><TrendingUp size={18} /></div><div><h2>Общая удовлетворённость</h2><p>Как менялось состояние отношений</p></div></div>
               <div className="history-period-switcher" aria-label="Период истории">
-                {[7, 30, 365].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={period === value ? 'active' : ''}
-                    onClick={() => setPeriod(value)}
-                  >
-                    {value === 7 ? '7 дней' : value === 30 ? 'Месяц' : 'Год'}
-                  </button>
-                ))}
+                {[7, 30, 365].map((value) => <button key={value} type="button" className={period === value ? 'active' : ''} onClick={() => setPeriod(value)}>{value === 7 ? '7 дней' : value === 30 ? 'Месяц' : 'Год'}</button>)}
               </div>
             </div>
 
             {hasSatisfactionData ? (
-              <div className="history-chart">
-                <ResponsiveContainer width="100%" height={240}>
-                  <LineChart
-                    data={satisfactionChartData}
-                    margin={{ top: 10, right: 8, left: -20, bottom: 4 }}
-                  >
-                    <CartesianGrid stroke="rgba(255,255,255,.06)" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fill: 'rgba(245,242,247,.38)', fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis
-                      domain={[0, 100]}
-                      ticks={[0, 25, 50, 75, 100]}
-                      tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'rgba(12,14,29,.96)',
-                        border: '1px solid rgba(255,255,255,.1)',
-                        borderRadius: 12,
-                        boxShadow: '0 12px 28px rgba(0,0,0,.3)',
-                        fontSize: 11,
-                      }}
-                      labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }}
-                      formatter={(value) => formatSatisfaction(value)}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="my_satisfaction"
-                      name="Вы"
-                      stroke="#f05ba7"
-                      strokeWidth={2.5}
-                      dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }}
-                      activeDot={{ r: 4 }}
-                      connectNulls
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="partner_satisfaction"
-                      name="Партнёр"
-                      stroke="#9b7cff"
-                      strokeWidth={2.5}
-                      dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }}
-                      activeDot={{ r: 4 }}
-                      connectNulls
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="history-empty-chart">
-                <Activity size={20} />
-                <p>История пока не накоплена.</p>
-                <span>Значения появятся здесь после первых изменений метрик.</span>
-              </div>
-            )}
+              <div className="history-chart"><ResponsiveContainer width="100%" height={240}><LineChart data={satisfactionChartData} margin={{ top: 10, right: 8, left: -20, bottom: 4 }}><CartesianGrid stroke="rgba(255,255,255,.06)" vertical={false} /><XAxis dataKey="label" tick={{ fill: 'rgba(245,242,247,.38)', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" /><YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }} axisLine={false} tickLine={false} /><Tooltip contentStyle={{ background: 'rgba(12,14,29,.96)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, boxShadow: '0 12px 28px rgba(0,0,0,.3)', fontSize: 11 }} labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }} formatter={(value) => formatSatisfaction(value)} /><Line type="monotone" dataKey="my_satisfaction" name="Вы" stroke="#f05ba7" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }} activeDot={{ r: 4 }} connectNulls /><Line type="monotone" dataKey="partner_satisfaction" name="Партнёр" stroke="#9b7cff" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }} activeDot={{ r: 4 }} connectNulls /></LineChart></ResponsiveContainer></div>
+            ) : <div className="history-empty-chart"><Activity size={20} /><p>История пока не накоплена.</p><span>Значения появятся здесь после первых изменений метрик.</span></div>}
           </section>
 
           <section className="history-metrics-section">
-            <div className="history-section-heading">
-              <div>
-                <p className="page-eyebrow">По показателям</p>
-                <h2>История метрик</h2>
-              </div>
-              <span>{metricHistories.length}</span>
-            </div>
-
-            {metricHistories.length === 0 && (
-              <div className="history-feature-empty">
-                <SlidersHorizontal size={20} />
-                <p>Пока нет активных метрик.</p>
-              </div>
-            )}
-
+            <div className="history-section-heading"><div><p className="page-eyebrow">По показателям</p><h2>История метрик</h2></div><span>{metricHistories.length}</span></div>
+            {metricHistories.length === 0 && <div className="history-feature-empty"><SlidersHorizontal size={20} /><p>Пока нет активных метрик.</p></div>}
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
-                const periodValues = values.filter((item) => isWithinPeriod(item.created_at, period))
-                const chartData = periodValues
-                  .slice()
-                  .reverse()
-                  .map((item) => ({
-                    ...item,
-                    label: formatDate(item.created_at),
-                    satisfaction_value: item.satisfaction,
-                  }))
-                const latest = periodValues[0]
-
+                const chartData = values.slice().reverse().map((item) => ({ ...item, label: formatDate(item.created_at), satisfaction_value: item.satisfaction }))
+                const latest = values[0]
                 return (
                   <article className="history-metric-card" key={metric.id}>
-                    <div className="history-metric-header">
-                      <div className="history-metric-title-row">
-                        <span className="history-metric-icon">
-                          <SlidersHorizontal size={15} />
-                        </span>
-                        <div>
-                          <h3>{metric.name}</h3>
-                          <span>{periodValues.length} {periodValues.length === 1 ? 'изменение' : periodValues.length < 5 ? 'изменения' : 'изменений'} за выбранный период</span>
-                        </div>
-                      </div>
-                      <div className="history-metric-current">
-                        <strong>{formatSatisfaction(latest?.satisfaction)}</strong>
-                      </div>
-                    </div>
-
-                    {chartData.length > 0 ? (
-                      <div className="history-metric-chart">
-                        <ResponsiveContainer width="100%" height={150}>
-                          <LineChart
-                            data={chartData}
-                            margin={{ top: 8, right: 4, left: -24, bottom: 0 }}
-                          >
-                            <CartesianGrid stroke="rgba(255,255,255,.05)" vertical={false} />
-                            <XAxis
-                              dataKey="label"
-                              tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }}
-                              axisLine={false}
-                              tickLine={false}
-                              interval="preserveStartEnd"
-                            />
-                            <YAxis
-                              domain={[0, 100]}
-                              ticks={[0, 25, 50, 75, 100]}
-                              tick={{ fill: 'rgba(245,242,247,.24)', fontSize: 8 }}
-                              axisLine={false}
-                              tickLine={false}
-                              width={30}
-                            />
-                            <Tooltip
-                              contentStyle={{
-                                background: 'rgba(12,14,29,.96)',
-                                border: '1px solid rgba(255,255,255,.1)',
-                                borderRadius: 12,
-                                fontSize: 11,
-                              }}
-                              labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }}
-                              formatter={(value) => formatSatisfaction(value)}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="satisfaction_value"
-                              name="Удовлетворённость"
-                              stroke="#f05ba7"
-                              strokeWidth={2.5}
-                              dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }}
-                              activeDot={{ r: 4 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="history-metric-empty">За выбранный период изменений нет.</div>
-                    )}
-
-                    {periodValues.length > 0 && (
-                      <div className="history-metric-events">
-                        {periodValues.slice(0, 5).map((item) => (
-                          <div className="history-metric-event" key={item.id}>
-                            <span>{formatDateTime(item.created_at)}</span>
-                            <strong>{formatSatisfaction(item.satisfaction)}</strong>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="history-metric-header"><div className="history-metric-title-row"><span className="history-metric-icon"><SlidersHorizontal size={15} /></span><div><h3>{metric.name}</h3><span>{values.length} {values.length === 1 ? 'изменение' : values.length < 5 ? 'изменения' : 'изменений'} за выбранный период</span></div></div><div className="history-metric-current"><strong>{formatSatisfaction(latest?.satisfaction)}</strong></div></div>
+                    {chartData.length > 0 ? <div className="history-metric-chart"><ResponsiveContainer width="100%" height={150}><LineChart data={chartData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}><CartesianGrid stroke="rgba(255,255,255,.05)" vertical={false} /><XAxis dataKey="label" tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" /><YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: 'rgba(245,242,247,.24)', fontSize: 8 }} axisLine={false} tickLine={false} width={30} /><Tooltip contentStyle={{ background: 'rgba(12,14,29,.96)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, fontSize: 11 }} labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }} formatter={(value) => formatSatisfaction(value)} /><Line type="monotone" dataKey="satisfaction_value" name="Удовлетворённость" stroke="#f05ba7" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }} activeDot={{ r: 4 }} /></LineChart></ResponsiveContainer></div> : <div className="history-metric-empty">За выбранный период изменений нет.</div>}
+                    {values.length > 0 && <div className="history-metric-events">{values.slice(0, 5).map((item) => <div className="history-metric-event" key={item.id}><span>{formatDateTime(item.created_at)}</span><strong>{formatSatisfaction(item.satisfaction)}</strong></div>)}</div>}
                   </article>
                 )
               })}
