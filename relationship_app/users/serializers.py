@@ -12,6 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
             'id',
             'username',
             'email',
+            'display_name',
+            'avatar_url',
         )
 
 
@@ -37,3 +39,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         return user
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'display_name',
+            'avatar_url',
+        )
