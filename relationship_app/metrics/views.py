@@ -17,6 +17,7 @@ from .serializers import (
 from .services import (
     calculate_relationship_satisfaction,
     calculate_relationship_satisfaction_history,
+    get_effective_metric_values,
 )
 
 
@@ -161,10 +162,7 @@ class MetricValueHistoryView(APIView):
         except CoupleMetric.DoesNotExist:
             return Response({'detail': 'Метрика не найдена.'}, status=404)
 
-        values = MetricValue.objects.filter(
-            metric=metric,
-            user=request.user,
-        ).order_by('-created_at', '-id')
+        effective_values = get_effective_metric_values(metric, request.user)
 
         period = request.query_params.get('period')
         if period is not None:
@@ -181,8 +179,12 @@ class MetricValueHistoryView(APIView):
             start_datetime = timezone.make_aware(
                 datetime.combine(start_date, datetime.min.time())
             )
-            values = values.filter(created_at__gte=start_datetime)
+            effective_values = [
+                value for value in effective_values
+                if value.created_at >= start_datetime
+            ]
 
+        values = list(reversed(effective_values))
         serializer = MetricValueSerializer(values, many=True, context={'metric': metric})
         return Response(serializer.data)
 
