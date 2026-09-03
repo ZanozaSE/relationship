@@ -1,10 +1,14 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { History, Home, Plus, SlidersHorizontal, UserRound } from 'lucide-react'
+import TogetherCard from '../components/TogetherCard.jsx'
 
 function AppLayout() {
+  const location = useLocation()
+
   return (
     <div className="app-shell">
       <main className="app-content">
+        {location.pathname === '/home' && <TogetherCard />}
         <Outlet />
       </main>
 
