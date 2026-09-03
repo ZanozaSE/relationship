@@ -3,7 +3,20 @@
 }
 
 .profile-page .page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
+}
+
+.profile-page .page-heading > div {
+  min-width: 0;
+}
+
+.profile-page .page-heading .icon-button {
+  margin-left: auto;
+  flex: 0 0 42px;
 }
 
 .profile-card {
