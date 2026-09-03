@@ -2,14 +2,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 78px;
-  height: 78px;
+  width: 116px;
+  height: 116px;
   margin: 16px auto 18px;
   overflow: hidden;
   color: rgba(245,242,247,.3);
-  background: rgba(240,91,167,.08);
-  border: 2px solid rgba(240,91,167,.18);
+  background: rgba(240,91,167,.12);
+  border: 2px solid rgba(240,91,167,.28);
   border-radius: 50%;
+  box-shadow: 0 8px 22px rgba(0,0,0,.22);
 }
 
 .profile-avatar-preview img {
@@ -93,4 +94,11 @@
 .profile-save-button:disabled {
   opacity: .55;
   cursor: wait;
+}
+
+@media (max-width: 380px) {
+  .profile-avatar-preview {
+    width: 104px;
+    height: 104px;
+  }
 }
