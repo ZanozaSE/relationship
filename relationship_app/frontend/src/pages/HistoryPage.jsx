@@ -21,9 +21,17 @@ function formatDateTime(value) {
   })
 }
 
-function formatMetricValue(metric, value) {
+function formatSatisfaction(value) {
   if (value == null) return '—'
-  return metric.scale_type === 'balance' && value > 0 ? `+${value}` : value
+  return `${Number(value).toFixed(0)}%`
+}
+
+function isWithinPeriod(value, period) {
+  if (!value) return false
+  const timestamp = new Date(value).getTime()
+  if (Number.isNaN(timestamp)) return false
+  const cutoff = Date.now() - period * 24 * 60 * 60 * 1000
+  return timestamp >= cutoff
 }
 
 function HistoryPage() {
@@ -101,7 +109,7 @@ function HistoryPage() {
         </div>
         <button
           type="button"
-          className="icon-button"
+          className="icon-button history-refresh-button"
           onClick={loadHistory}
           disabled={isLoading}
           aria-label="Обновить историю"
@@ -148,7 +156,7 @@ function HistoryPage() {
                     className={period === value ? 'active' : ''}
                     onClick={() => setPeriod(value)}
                   >
-                    {value === 365 ? 'Год' : `${value} дн.`}
+                    {value === 7 ? '7 дней' : value === 30 ? 'Месяц' : 'Год'}
                   </button>
                 ))}
               </div>
@@ -185,7 +193,7 @@ function HistoryPage() {
                         fontSize: 11,
                       }}
                       labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }}
-                      formatter={(value) => `${Number(value).toFixed(2)}%`}
+                      formatter={(value) => formatSatisfaction(value)}
                     />
                     <Line
                       type="monotone"
@@ -237,14 +245,16 @@ function HistoryPage() {
 
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
-                const chartData = values
+                const periodValues = values.filter((item) => isWithinPeriod(item.created_at, period))
+                const chartData = periodValues
                   .slice()
                   .reverse()
                   .map((item) => ({
                     ...item,
                     label: formatDate(item.created_at),
+                    satisfaction_value: item.satisfaction,
                   }))
-                const latest = values[0]
+                const latest = periodValues[0]
 
                 return (
                   <article className="history-metric-card" key={metric.id}>
@@ -255,12 +265,11 @@ function HistoryPage() {
                         </span>
                         <div>
                           <h3>{metric.name}</h3>
-                          <span>{values.length} {values.length === 1 ? 'изменение' : values.length < 5 ? 'изменения' : 'изменений'}</span>
+                          <span>{periodValues.length} {periodValues.length === 1 ? 'изменение' : periodValues.length < 5 ? 'изменения' : 'изменений'} за выбранный период</span>
                         </div>
                       </div>
                       <div className="history-metric-current">
-                        <strong>{formatMetricValue(metric, latest?.value)}</strong>
-                        <span>{latest?.satisfaction != null ? `${latest.satisfaction}%` : '—'}</span>
+                        <strong>{formatSatisfaction(latest?.satisfaction)}</strong>
                       </div>
                     </div>
 
@@ -280,7 +289,8 @@ function HistoryPage() {
                               interval="preserveStartEnd"
                             />
                             <YAxis
-                              domain={[metric.min_value, metric.max_value]}
+                              domain={[0, 100]}
+                              ticks={[0, 25, 50, 75, 100]}
                               tick={{ fill: 'rgba(245,242,247,.24)', fontSize: 8 }}
                               axisLine={false}
                               tickLine={false}
@@ -294,12 +304,12 @@ function HistoryPage() {
                                 fontSize: 11,
                               }}
                               labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }}
-                              formatter={(value) => formatMetricValue(metric, value)}
+                              formatter={(value) => formatSatisfaction(value)}
                             />
                             <Line
                               type="monotone"
-                              dataKey="value"
-                              name={metric.name}
+                              dataKey="satisfaction_value"
+                              name="Удовлетворённость"
                               stroke="#f05ba7"
                               strokeWidth={2.5}
                               dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }}
@@ -309,16 +319,15 @@ function HistoryPage() {
                         </ResponsiveContainer>
                       </div>
                     ) : (
-                      <div className="history-metric-empty">Значения этой метрики ещё не изменялись.</div>
+                      <div className="history-metric-empty">За выбранный период изменений нет.</div>
                     )}
 
-                    {values.length > 0 && (
+                    {periodValues.length > 0 && (
                       <div className="history-metric-events">
-                        {values.slice(0, 5).map((item) => (
+                        {periodValues.slice(0, 5).map((item) => (
                           <div className="history-metric-event" key={item.id}>
                             <span>{formatDateTime(item.created_at)}</span>
-                            <strong>{formatMetricValue(metric, item.value)}</strong>
-                            <em>{item.satisfaction}%</em>
+                            <strong>{formatSatisfaction(item.satisfaction)}</strong>
                           </div>
                         ))}
                       </div>
