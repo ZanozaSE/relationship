@@ -78,6 +78,14 @@ function LoginPage() {
           <button type="submit" className="primary-button" disabled={isLoading}>
             {isLoading ? 'Вход…' : 'Войти'}
           </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => navigate('/register')}
+            disabled={isLoading}
+          >
+            Зарегистрироваться
+          </button>
         </form>
       </section>
     </main>
