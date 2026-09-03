@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Heart } from 'lucide-react'
 import { apiFetch } from '../api'
 import { useAuth } from '../auth/AuthContext.jsx'
 import './TogetherCard.css'
@@ -47,7 +46,6 @@ function TogetherCard() {
   return (
     <section className="home-together-card">
       <div className="home-together-heading">
-        <div className="home-together-icon"><Heart size={17} /></div>
         <div>
           <p className="home-card-eyebrow">Вместе</p>
           <h2>{formatDays(days)}</h2>
