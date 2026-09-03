@@ -6,7 +6,7 @@ const SCALE_TYPES = [
   {
     value: 'balance',
     label: 'Баланс',
-    description: 'От одного полюса к другому',
+    description: 'Значение от одного полюса к другому',
     min: -99,
     max: 99,
     target: 0,
