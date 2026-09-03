@@ -119,3 +119,33 @@ def get_user_couple(user):
         return None
 
     return membership.couple
+
+
+def get_or_create_invitation(user):
+    couple = get_user_couple(user)
+    if couple is None:
+        raise ValueError('Пользователь не состоит в паре.')
+
+    if couple.members.count() >= 2:
+        raise ValueError('В этой паре уже два участника.')
+
+    invitation = (
+        CoupleInvitation.objects
+        .filter(
+            couple=couple,
+            used_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        )
+        .order_by('-created_at')
+        .first()
+    )
+
+    if invitation is not None:
+        return invitation
+
+    return CoupleInvitation.objects.create(
+        couple=couple,
+        created_by=user,
+        code=generate_invite_code(),
+        expires_at=timezone.now() + timedelta(days=7),
+    )
