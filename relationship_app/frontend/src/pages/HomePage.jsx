@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { apiFetch } from '../api'
+import './HomePage.css'
 
 function formatSatisfaction(value) {
   if (value == null) return '—'
@@ -126,8 +127,10 @@ function HomePage() {
       {!isLoading && !error && couple && (
         <div className="home-content">
           <div className="home-relationship-card">
-            <div className="home-card-icon"><Heart size={20} /></div>
-            <p className="home-card-eyebrow">Удовлетворённость отношениями</p>
+            <div className="home-card-title">
+              <div className="home-card-icon"><Heart size={20} /></div>
+              <p className="home-card-eyebrow">Удовлетворённость отношениями</p>
+            </div>
 
             <div className="home-partners-row home-current-values">
               <div className="home-partner">
@@ -143,9 +146,6 @@ function HomePage() {
 
             {chartData.length > 0 && (
               <div className="home-history-chart">
-                <div className="home-history-chart-header">
-                  <span>Динамика за 7 дней</span>
-                </div>
                 <div className="home-chart-wrap">
                   <ResponsiveContainer width="100%" height={210}>
                     <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 4 }}>
