@@ -10,7 +10,7 @@ function ProfilePage() {
   const [couple, setCouple] = useState(null)
   const [displayName, setDisplayName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
-  const [togetherDays, setTogetherDays] = useState('0')
+  const [relationshipStartDate, setRelationshipStartDate] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
@@ -21,7 +21,10 @@ function ProfilePage() {
     setIsLoading(true)
     setError('')
     try {
-      const [userResponse, coupleResponse] = await Promise.all([apiFetch('/api/auth/me/'), apiFetch('/api/couples/me/')])
+      const [userResponse, coupleResponse] = await Promise.all([
+        apiFetch('/api/auth/me/'),
+        apiFetch('/api/couples/me/'),
+      ])
       const userData = await userResponse.json().catch(() => ({}))
       if (!userResponse.ok) throw new Error(userData.detail || 'Не удалось загрузить профиль.')
       setDisplayName(userData.display_name || '')
@@ -29,12 +32,12 @@ function ProfilePage() {
 
       if (coupleResponse.status === 404) {
         setCouple(null)
-        setTogetherDays('0')
+        setRelationshipStartDate('')
       } else {
         const coupleData = await coupleResponse.json().catch(() => ({}))
         if (!coupleResponse.ok) throw new Error(coupleData.detail || 'Не удалось загрузить информацию о паре.')
         setCouple(coupleData)
-        setTogetherDays(String(coupleData.together_days ?? 0))
+        setRelationshipStartDate(coupleData.relationship_start_date || '')
       }
     } catch (requestError) {
       setError(requestError.message || 'Не удалось загрузить профиль.')
@@ -51,17 +54,27 @@ function ProfilePage() {
     setError('')
     setSuccess('')
     try {
-      const profileResponse = await apiFetch('/api/auth/profile/', { method: 'PATCH', body: JSON.stringify({ display_name: displayName.trim(), avatar_url: avatarUrl.trim() }) })
+      const profileResponse = await apiFetch('/api/auth/profile/', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          display_name: displayName.trim(),
+          avatar_url: avatarUrl.trim(),
+        }),
+      })
       const profileData = await profileResponse.json().catch(() => ({}))
       if (!profileResponse.ok) throw new Error(profileData.detail || 'Не удалось сохранить профиль.')
 
       if (couple) {
-        const days = Number(togetherDays)
-        const coupleResponse = await apiFetch('/api/couples/me/', { method: 'PATCH', body: JSON.stringify({ together_days: Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0 }) })
+        const coupleResponse = await apiFetch('/api/couples/me/', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            relationship_start_date: relationshipStartDate || null,
+          }),
+        })
         const coupleData = await coupleResponse.json().catch(() => ({}))
-        if (!coupleResponse.ok) throw new Error(coupleData.detail || 'Не удалось сохранить количество дней вместе.')
+        if (!coupleResponse.ok) throw new Error(coupleData.detail || 'Не удалось сохранить дату начала отношений.')
         setCouple(coupleData)
-        setTogetherDays(String(coupleData.together_days ?? 0))
+        setRelationshipStartDate(coupleData.relationship_start_date || '')
       }
       setSuccess('Профиль сохранён.')
     } catch (saveError) {
@@ -81,7 +94,7 @@ function ProfilePage() {
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || 'Не удалось выйти из пары.')
       setCouple(null)
-      setTogetherDays('0')
+      setRelationshipStartDate('')
       setSuccess('Вы вышли из пары.')
     } catch (leaveError) {
       setError(leaveError.message || 'Не удалось выйти из пары.')
@@ -128,8 +141,14 @@ function ProfilePage() {
 
         {couple && (
           <label className="profile-field profile-together-field">
-            <span>Количество дней вместе</span>
-            <input type="number" min="0" step="1" value={togetherDays} onChange={(event) => setTogetherDays(event.target.value)} />
+            <span>Дата начала отношений</span>
+            <input
+              type="date"
+              value={relationshipStartDate}
+              onChange={(event) => setRelationshipStartDate(event.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+            />
+            <small>Количество дней вместе будет рассчитано автоматически.</small>
           </label>
         )}
 
