@@ -4,7 +4,7 @@ import { apiFetch } from '../api'
 
 const BALANCE_MIN = -99
 const BALANCE_MAX = 99
-const SAVE_DEBOUNCE_MS = 250
+const SAVE_DEBOUNCE_MS = 10 * 60 * 1000
 
 function formatValue(metric, value) {
   if (value === null || value === undefined) return '—'
@@ -96,7 +96,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted }
 
   function scheduleImportanceSave(nextImportance) {
     if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
-    importanceSaveTimerRef.current = setTimeout(() => saveImportance(nextImportance), SAVE_DEBOUNCE_MS)
+    importanceSaveTimerRef.current = setTimeout(() => saveImportance(nextImportance), 250)
   }
 
   function changeValue(delta) {
