@@ -49,3 +49,28 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             'display_name',
             'avatar_url',
         )
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+    )
+    new_password_confirm = serializers.CharField(
+        write_only=True,
+        min_length=8,
+    )
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({
+                'new_password_confirm': 'Пароли не совпадают.'
+            })
+
+        return attrs
