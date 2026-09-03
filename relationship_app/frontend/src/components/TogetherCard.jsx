@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Heart } from 'lucide-react'
 import { apiFetch } from '../api'
 import { useAuth } from '../auth/AuthContext.jsx'
 import './TogetherCard.css'
