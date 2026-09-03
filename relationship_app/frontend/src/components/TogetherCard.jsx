@@ -47,15 +47,8 @@ function TogetherCard() {
   return (
     <section className="home-together-card">
       <div className="home-together-heading">
-        <div>
-          <p className="home-card-eyebrow">Вместе</p>
-          <h2>{formatDays(days)}</h2>
-          {couple.relationship_start_date && (
-            <p className="home-together-date">
-              с {new Date(`${couple.relationship_start_date}T00:00:00`).toLocaleDateString('ru-RU')}
-            </p>
-          )}
-        </div>
+        <p className="home-card-eyebrow">Вместе</p>
+        <h2>{formatDays(days)}</h2>
       </div>
 
       <div className="home-together-avatars">
