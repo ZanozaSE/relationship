@@ -59,63 +59,31 @@ function RegisterPage() {
         <form className="metric-form" onSubmit={handleSubmit}>
           <label className="form-field">
             <span>Логин</span>
-            <input
-              type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              autoComplete="username"
-              disabled={isLoading || isSuccess}
-            />
+            <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" disabled={isLoading || isSuccess} />
           </label>
 
           <label className="form-field">
             <span>Email <small>необязательно</small></span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              disabled={isLoading || isSuccess}
-            />
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" disabled={isLoading || isSuccess} />
           </label>
 
           <label className="form-field">
             <span>Пароль</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={isLoading || isSuccess}
-            />
+            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" disabled={isLoading || isSuccess} />
           </label>
 
           <label className="form-field">
             <span>Повторите пароль</span>
-            <input
-              type="password"
-              value={passwordConfirm}
-              onChange={(event) => setPasswordConfirm(event.target.value)}
-              autoComplete="new-password"
-              disabled={isLoading || isSuccess}
-            />
+            <input type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} autoComplete="new-password" disabled={isLoading || isSuccess} />
           </label>
 
           {error && <p className="form-message error">{error}</p>}
-          {isSuccess && (
-            <p className="form-message success">Аккаунт создан. Перенаправляем на страницу входа…</p>
-          )}
+          {isSuccess && <p className="form-message success">Аккаунт создан. Перенаправляем на страницу входа…</p>}
 
           <button type="submit" className="primary-button" disabled={isLoading || isSuccess}>
             {isLoading ? 'Создание аккаунта…' : 'Зарегистрироваться'}
           </button>
-
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => navigate('/login')}
-            disabled={isLoading || isSuccess}
-          >
+          <button type="button" className="primary-button" onClick={() => navigate('/login')} disabled={isLoading || isSuccess}>
             Вернуться ко входу
           </button>
         </form>
