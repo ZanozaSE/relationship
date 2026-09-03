@@ -3,7 +3,15 @@
 }
 
 .history-page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 18px;
+}
+
+.history-page-heading > div {
+  min-width: 0;
 }
 
 .history-page-heading h1 {
@@ -12,7 +20,7 @@
 
 .history-refresh-button {
   margin-left: auto;
-  flex: 0 0 auto;
+  flex: 0 0 42px;
 }
 
 .history-content {
