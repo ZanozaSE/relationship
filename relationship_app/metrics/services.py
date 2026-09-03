@@ -1,46 +1,22 @@
 import math
 from datetime import datetime, timedelta
 
-from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 
 from .models import CoupleMetric, MetricValue
 
 
-METRIC_CHANGE_INTERVAL = timedelta(minutes=10)
-
-
-def get_effective_metric_values(metric, user):
-    """
-    Возвращает только значимые изменения значения метрики.
-
-    Если пользователь меняет значение несколько раз подряд, изменения,
-    произошедшие менее чем через 10 минут после предыдущего учтённого
-    изменения, считаются частью одного периода редактирования и не влияют
-    на историю или расчёт удовлетворённости.
-    """
-    values = list(
+def get_metric_values(metric, user):
+    """Возвращает все сохранённые значения метрики пользователя по времени."""
+    return list(
         MetricValue.objects
         .filter(metric=metric, user=user)
         .order_by('created_at', 'id')
     )
 
-    effective_values = []
-    last_effective_at = None
 
-    for metric_value in values:
-        if (
-            last_effective_at is None
-            or metric_value.created_at - last_effective_at >= METRIC_CHANGE_INTERVAL
-        ):
-            effective_values.append(metric_value)
-            last_effective_at = metric_value.created_at
-
-    return effective_values
-
-
-def get_latest_effective_metric_value(metric, user):
-    values = get_effective_metric_values(metric, user)
+def get_latest_metric_value(metric, user):
+    values = get_metric_values(metric, user)
     return values[-1] if values else None
 
 
@@ -48,9 +24,10 @@ def calculate_relationship_satisfaction(user, couple):
     """
     Рассчитывает общую удовлетворённость отношениями для одного участника пары.
 
-    Используются только активные метрики пары, по которым у пользователя есть
-    последнее учтённое значение. Изменения, сделанные менее чем через 10 минут
-    после предыдущего учтённого изменения, игнорируются.
+    Используется последнее реально сохранённое значение каждой активной метрики.
+    Фильтрация частых изменений выполняется на фронтенде: пока пользователь
+    последовательно меняет значение, запрос на сохранение откладывается на 10
+    минут и отправляется только с последним значением.
 
     Формула взвешенного геометрического среднего:
         R = exp(sum(w_i * ln(S_i)) / sum(w_i))
@@ -67,7 +44,7 @@ def calculate_relationship_satisfaction(user, couple):
     total_weight = 0.0
 
     for metric in metrics:
-        metric_value = get_latest_effective_metric_value(metric, user)
+        metric_value = get_latest_metric_value(metric, user)
         if metric_value is None:
             continue
 
@@ -79,19 +56,12 @@ def calculate_relationship_satisfaction(user, couple):
             ),
             None,
         )
-        importance = (
-            importance_setting.importance
-            if importance_setting is not None
-            else 100
-        )
+        importance = importance_setting.importance if importance_setting is not None else 100
 
         if importance == 0:
             continue
 
-        satisfaction = 100 - abs(
-            metric_value.value - metric.target_value
-        )
-
+        satisfaction = 100 - abs(metric_value.value - metric.target_value)
         if satisfaction <= 0:
             return 0.0
 
@@ -137,9 +107,9 @@ def calculate_relationship_satisfaction_history(user, couple, days):
     """
     Возвращает дневную историю удовлетворённости за указанный период.
 
-    Для каждого дня используется последнее учтённое значение каждой метрики,
-    зафиксированное к этому моменту. Изменения, произошедшие менее чем через
-    10 минут после предыдущего учтённого изменения, не влияют на состояние.
+    Используются реально сохранённые значения метрик. Фронтенд отвечает за то,
+    чтобы во время одного непрерывного редактирования отправлялось только
+    последнее значение после 10 минут без новых изменений.
     """
     today = timezone.localdate()
     start_date = today - timedelta(days=days - 1)
@@ -167,27 +137,24 @@ def calculate_relationship_satisfaction_history(user, couple, days):
     }
 
     state = {}
-    effective_values_by_date = {}
+    values_by_date = {}
 
     for metric in metrics:
-        effective_values = get_effective_metric_values(metric, user)
-        previous_values = [
-            value for value in effective_values
-            if value.created_at < start_datetime
-        ]
+        values = get_metric_values(metric, user)
+        previous_values = [value for value in values if value.created_at < start_datetime]
         if previous_values:
             state[metric.id] = previous_values[-1].value
 
-        for metric_value in effective_values:
+        for metric_value in values:
             if start_datetime <= metric_value.created_at <= end_datetime:
                 local_date = timezone.localtime(metric_value.created_at).date()
-                effective_values_by_date.setdefault(local_date, []).append(metric_value)
+                values_by_date.setdefault(local_date, []).append(metric_value)
 
     points = []
     current_date = start_date
     while current_date <= today:
         for metric_value in sorted(
-            effective_values_by_date.get(current_date, []),
+            values_by_date.get(current_date, []),
             key=lambda item: (item.created_at, item.id),
         ):
             state[metric_value.metric_id] = metric_value.value
