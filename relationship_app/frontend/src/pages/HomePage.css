@@ -389,6 +389,27 @@
   font-size: 12px;
 }
 
+.home-note-form-actions {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.home-note-form-actions .primary-button,
+.home-note-form-actions .secondary-button {
+  width: calc(50% - 2px);
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+  font-size: 12px;
+}
+
+.home-note-form-actions .secondary-button {
+  color: rgba(245,242,247,.72);
+}
+
 .home-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
