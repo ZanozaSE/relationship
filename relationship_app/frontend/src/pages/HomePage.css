@@ -1,0 +1,166 @@
+.home-page {
+  padding-top: 6px;
+}
+
+.home-page-heading {
+  margin-bottom: 18px;
+}
+
+.home-page-heading h1 {
+  margin-bottom: 0;
+}
+
+.home-content {
+  gap: 12px;
+}
+
+.home-relationship-card {
+  padding: 22px 18px 16px;
+  border-radius: 24px;
+}
+
+.home-card-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 10px;
+  border-radius: 13px;
+}
+
+.home-card-eyebrow {
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.home-current-values {
+  margin-top: 18px;
+  padding-top: 16px;
+  gap: 14px;
+}
+
+.home-partner {
+  gap: 4px;
+}
+
+.home-partner span {
+  font-size: 10px;
+}
+
+.home-partner strong {
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.home-partner-divider {
+  height: 30px;
+}
+
+.home-history-chart {
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,.055);
+}
+
+.home-history-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  color: rgba(245,242,247,.42);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.home-chart-wrap {
+  width: 100%;
+  height: 210px;
+}
+
+.home-chart-wrap .recharts-wrapper,
+.home-chart-wrap .recharts-surface {
+  overflow: visible;
+}
+
+.home-chart-wrap .recharts-legend-wrapper {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
+
+.home-chart-wrap .recharts-legend-item {
+  margin-right: 14px !important;
+}
+
+.home-chart-wrap .recharts-legend-item-text {
+  color: rgba(245,242,247,.48) !important;
+  font-size: 10px;
+}
+
+.home-chart-wrap .recharts-cartesian-axis-tick-value {
+  font-family: inherit;
+}
+
+.home-status-card {
+  padding: 15px 16px;
+  border-radius: 19px;
+}
+
+.home-empty-card {
+  padding: 28px 20px;
+  background: rgba(18,20,40,.78);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 22px;
+  box-shadow: 0 16px 36px rgba(0,0,0,.18);
+  text-align: center;
+}
+
+.home-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 14px;
+  color: #f05ba7;
+  background: rgba(240,91,167,.1);
+  border: 1px solid rgba(240,91,167,.16);
+  border-radius: 14px;
+}
+
+.home-empty-card h2 {
+  margin: 0;
+  color: #f5f2f7;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.home-empty-card p {
+  max-width: 400px;
+  margin: 9px auto 0;
+  color: rgba(245,242,247,.48);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.home-empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.home-empty-actions .secondary-button {
+  margin-top: 0;
+}
+
+@media (min-width: 480px) {
+  .home-empty-actions {
+    flex-direction: row;
+  }
+
+  .home-empty-actions .primary-button,
+  .home-empty-actions .secondary-button {
+    flex: 1;
+  }
+}
