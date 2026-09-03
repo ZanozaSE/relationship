@@ -10,6 +10,11 @@
   margin-bottom: 0;
 }
 
+.history-refresh-button {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
 .history-content {
   display: flex;
   flex-direction: column;
@@ -258,7 +263,7 @@
 
 .history-metric-event {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 9px 2px;
@@ -275,16 +280,8 @@
 }
 
 .history-metric-event strong {
-  color: rgba(245,242,247,.75);
-  font-size: 10px;
-}
-
-.history-metric-event em {
-  min-width: 42px;
   color: #f05ba7;
-  font-size: 9px;
-  font-style: normal;
-  text-align: right;
+  font-size: 10px;
 }
 
 .history-feature-empty {
