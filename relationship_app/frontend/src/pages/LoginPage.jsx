@@ -86,6 +86,14 @@ function LoginPage() {
           >
             Зарегистрироваться
           </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => navigate('/forgot-password')}
+            disabled={isLoading}
+          >
+            Забыли пароль?
+          </button>
         </form>
       </section>
     </main>
