@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, Heart, NotebookPen, Plus, RefreshCw, Trash2, Users } from 'lucide-react'
+import { Check, Copy, Heart, NotebookPen, Pencil, Plus, RefreshCw, Trash2, Users } from 'lucide-react'
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { apiFetch } from '../api'
 import './HomePage.css'
@@ -28,6 +28,9 @@ function HomePage() {
   const [goals, setGoals] = useState([])
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('')
+  const [editingNoteId, setEditingNoteId] = useState(null)
+  const [editingNoteContent, setEditingNoteContent] = useState('')
+  const [isUpdatingNote, setIsUpdatingNote] = useState(false)
   const [newGoal, setNewGoal] = useState({ title: '', description: '', target_value: '', unit: '', deadline: '' })
   const [showNoteForm, setShowNoteForm] = useState(false)
   const [showGoalForm, setShowGoalForm] = useState(false)
@@ -97,10 +100,7 @@ function HomePage() {
     setIsCreatingCouple(true)
     setError('')
     try {
-      const response = await apiFetch('/api/couples/', {
-        method: 'POST',
-        body: JSON.stringify({}),
-      })
+      const response = await apiFetch('/api/couples/', { method: 'POST', body: JSON.stringify({}) })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || 'Не удалось создать пару.')
       setShowJoinForm(false)
@@ -108,9 +108,7 @@ function HomePage() {
       await loadHome()
     } catch (createError) {
       setError(createError.message || 'Не удалось создать пару.')
-    } finally {
-      setIsCreatingCouple(false)
-    }
+    } finally { setIsCreatingCouple(false) }
   }
 
   async function joinCouple(event) {
@@ -120,10 +118,7 @@ function HomePage() {
     setIsJoiningCouple(true)
     setError('')
     try {
-      const response = await apiFetch('/api/couples/join/', {
-        method: 'POST',
-        body: JSON.stringify({ code }),
-      })
+      const response = await apiFetch('/api/couples/join/', { method: 'POST', body: JSON.stringify({ code }) })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || 'Не удалось присоединиться к паре.')
       setShowJoinForm(false)
@@ -131,9 +126,7 @@ function HomePage() {
       await loadHome()
     } catch (joinError) {
       setError(joinError.message || 'Не удалось присоединиться к паре.')
-    } finally {
-      setIsJoiningCouple(false)
-    }
+    } finally { setIsJoiningCouple(false) }
   }
 
   async function loadInvitation() {
@@ -148,9 +141,7 @@ function HomePage() {
       setShowInvitation(true)
     } catch (invitationError) {
       setError(invitationError.message || 'Не удалось получить приглашение.')
-    } finally {
-      setIsLoadingInvitation(false)
-    }
+    } finally { setIsLoadingInvitation(false) }
   }
 
   async function copyInvitation() {
@@ -159,9 +150,7 @@ function HomePage() {
       await navigator.clipboard.writeText(inviteCode)
       setIsCopied(true)
       window.setTimeout(() => setIsCopied(false), 1600)
-    } catch {
-      setError('Не удалось скопировать код приглашения.')
-    }
+    } catch { setError('Не удалось скопировать код приглашения.') }
   }
 
   async function createNote(event) {
@@ -178,6 +167,36 @@ function HomePage() {
     } catch (saveError) {
       setError(saveError.message || 'Не удалось сохранить заметку.')
     } finally { setIsSavingNote(false) }
+  }
+
+  function startEditingNote(note) {
+    setEditingNoteId(note.id)
+    setEditingNoteContent(note.content || '')
+  }
+
+  function cancelEditingNote() {
+    setEditingNoteId(null)
+    setEditingNoteContent('')
+  }
+
+  async function updateNote(event, noteId) {
+    event.preventDefault()
+    const content = editingNoteContent.trim()
+    if (!content) return
+    setIsUpdatingNote(true)
+    setError('')
+    try {
+      const response = await apiFetch(`/api/couples/notes/${noteId}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.detail || 'Не удалось изменить заметку.')
+      setNotes((current) => current.map((note) => note.id === noteId ? data : note))
+      cancelEditingNote()
+    } catch (updateError) {
+      setError(updateError.message || 'Не удалось изменить заметку.')
+    } finally { setIsUpdatingNote(false) }
   }
 
   async function deleteNote(noteId) {
@@ -238,7 +257,30 @@ function HomePage() {
           <section className="home-feature-card"><div className="home-feature-header"><div className="home-feature-title"><div className="home-feature-icon"><NotebookPen size={18} /></div><div><h2>Заметки</h2><p>Мысли, идеи и всё, что хочется сохранить</p></div></div><button type="button" className="home-add-button" onClick={() => setShowNoteForm((value) => !value)} aria-label="Добавить заметку"><Plus size={18} /></button></div>
             {showNoteForm && <form className="home-inline-form" onSubmit={createNote}><textarea value={newNote} onChange={(event) => setNewNote(event.target.value)} placeholder="Напишите что-нибудь…" rows={4} autoFocus required /><button type="submit" className="primary-button" disabled={isSavingNote}>{isSavingNote ? 'Сохраняем…' : 'Сохранить заметку'}</button></form>}
             {notes.length === 0 && !showNoteForm && <div className="home-feature-empty">Здесь пока пусто. Можно сохранить первую мысль или идею.</div>}
-            {notes.map((note) => <div className="home-note" key={note.id}><p>{note.content}</p><div className="home-note-footer"><span>{new Date(note.updated_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span><button type="button" className="home-small-icon" onClick={() => deleteNote(note.id)} aria-label="Удалить заметку"><Trash2 size={14} /></button></div></div>)}
+            {notes.map((note) => (
+              <div className="home-note" key={note.id}>
+                {editingNoteId === note.id ? (
+                  <form className="home-note-edit-form" onSubmit={(event) => updateNote(event, note.id)}>
+                    <textarea value={editingNoteContent} onChange={(event) => setEditingNoteContent(event.target.value)} rows={4} autoFocus required />
+                    <div className="home-note-edit-actions">
+                      <button type="button" className="secondary-button" onClick={cancelEditingNote} disabled={isUpdatingNote}>Отмена</button>
+                      <button type="submit" className="primary-button" disabled={isUpdatingNote || !editingNoteContent.trim()}>{isUpdatingNote ? 'Сохраняем…' : 'Сохранить'}</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <p>{note.content}</p>
+                    <div className="home-note-footer">
+                      <span>{new Date(note.updated_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
+                      <div className="home-note-actions">
+                        <button type="button" className="home-small-icon home-note-edit-button" onClick={() => startEditingNote(note)} aria-label="Редактировать заметку"><Pencil size={14} /></button>
+                        <button type="button" className="home-small-icon" onClick={() => deleteNote(note.id)} aria-label="Удалить заметку"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
           </section>
           {!hasPartner && <div className="home-status-card"><div className="home-status-icon"><Users size={18} /></div><div className="home-status-content"><p>Пара создана</p><span>Ожидаем подключения второго партнёра.</span><button type="button" className="home-invite-button" onClick={loadInvitation} disabled={isLoadingInvitation}>{isLoadingInvitation ? 'Готовим приглашение…' : 'Пригласить партнёра'}</button>{showInvitation && inviteCode && <div className="home-invitation"><div className="home-invitation-code-row"><strong>{inviteCode}</strong><button type="button" className="home-copy-button" onClick={copyInvitation} aria-label="Скопировать код приглашения"><Copy size={15} /></button></div><p>{isCopied ? 'Код скопирован.' : 'Отправьте этот код партнёру для присоединения.'}</p>{inviteExpiresAt && <span>Действует 7 дней.</span>}</div>}</div></div>}
         </div>
