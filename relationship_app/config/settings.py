@@ -93,6 +93,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+PASSWORD_RESET_TIMEOUT = 3600
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
