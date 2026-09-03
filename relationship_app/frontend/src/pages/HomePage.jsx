@@ -31,6 +31,10 @@ function HomePage() {
   const [newGoal, setNewGoal] = useState({ title: '', description: '', target_value: '', unit: '', deadline: '' })
   const [showNoteForm, setShowNoteForm] = useState(false)
   const [showGoalForm, setShowGoalForm] = useState(false)
+  const [showJoinForm, setShowJoinForm] = useState(false)
+  const [inviteInput, setInviteInput] = useState('')
+  const [isCreatingCouple, setIsCreatingCouple] = useState(false)
+  const [isJoiningCouple, setIsJoiningCouple] = useState(false)
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [isSavingGoal, setIsSavingGoal] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
@@ -88,6 +92,49 @@ function HomePage() {
   const members = couple?.members ?? []
   const hasPartner = members.length >= 2
   const chartData = history.map((point) => ({ ...point, label: formatHistoryDate(point.date) }))
+
+  async function createCouple() {
+    setIsCreatingCouple(true)
+    setError('')
+    try {
+      const response = await apiFetch('/api/couples/', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.detail || 'Не удалось создать пару.')
+      setShowJoinForm(false)
+      setInviteInput('')
+      await loadHome()
+    } catch (createError) {
+      setError(createError.message || 'Не удалось создать пару.')
+    } finally {
+      setIsCreatingCouple(false)
+    }
+  }
+
+  async function joinCouple(event) {
+    event.preventDefault()
+    const code = inviteInput.trim()
+    if (!code) return
+    setIsJoiningCouple(true)
+    setError('')
+    try {
+      const response = await apiFetch('/api/couples/join/', {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.detail || 'Не удалось присоединиться к паре.')
+      setShowJoinForm(false)
+      setInviteInput('')
+      await loadHome()
+    } catch (joinError) {
+      setError(joinError.message || 'Не удалось присоединиться к паре.')
+    } finally {
+      setIsJoiningCouple(false)
+    }
+  }
 
   async function loadInvitation() {
     setIsLoadingInvitation(true)
@@ -175,7 +222,7 @@ function HomePage() {
       </div>
       {isLoading && <div className="home-state"><span className="state-dot" /><p>Загружаем состояние отношений…</p></div>}
       {!isLoading && error && <div className="home-state error-state"><p>{error}</p><button type="button" className="secondary-button" onClick={loadHome}>Повторить</button></div>}
-      {!isLoading && !error && !couple && <div className="home-empty-card"><div className="home-empty-icon"><Heart size={24} /></div><h2>Создайте пару</h2><p>Создайте новую пару или присоединитесь к уже созданной. После этого здесь появится ваша общая статистика.</p><div className="home-empty-actions"><button type="button" className="primary-button">Создать пару</button><button type="button" className="secondary-button">Присоединиться к паре</button></div></div>}
+      {!isLoading && !error && !couple && <div className="home-empty-card"><div className="home-empty-icon"><Heart size={24} /></div><h2>Создайте пару</h2><p>Создайте новую пару или присоединитесь к уже созданной. После этого здесь появится ваша общая статистика.</p><div className="home-empty-actions"><button type="button" className="primary-button" onClick={createCouple} disabled={isCreatingCouple}>{isCreatingCouple ? 'Создаём пару…' : 'Создать пару'}</button><button type="button" className="secondary-button" onClick={() => setShowJoinForm((value) => !value)}>{showJoinForm ? 'Отмена' : 'Присоединиться к паре'}</button></div>{showJoinForm && <form className="home-inline-form" onSubmit={joinCouple}><input value={inviteInput} onChange={(event) => setInviteInput(event.target.value)} placeholder="Код приглашения" maxLength={32} autoFocus required /><button type="submit" className="primary-button" disabled={isJoiningCouple}>{isJoiningCouple ? 'Подключаем…' : 'Подключиться'}</button></form>}</div>}
       {!isLoading && !error && couple && (
         <div className="home-content">
           <div className="home-relationship-card">
