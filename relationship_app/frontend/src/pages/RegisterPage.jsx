@@ -17,8 +17,8 @@ function RegisterPage() {
     setError('')
     setIsSuccess(false)
 
-    if (!username.trim() || !password || !passwordConfirm) {
-      setError('Заполните логин и оба поля пароля.')
+    if (!username.trim() || !email.trim() || !password || !passwordConfirm) {
+      setError('Заполните логин, email и оба поля пароля.')
       return
     }
 
@@ -63,8 +63,8 @@ function RegisterPage() {
           </label>
 
           <label className="form-field">
-            <span>Email <small>необязательно</small></span>
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" disabled={isLoading || isSuccess} />
+            <span>Email</span>
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required disabled={isLoading || isSuccess} />
           </label>
 
           <label className="form-field">
