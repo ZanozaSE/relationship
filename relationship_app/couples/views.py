@@ -7,6 +7,7 @@ from .serializers import (
     CoupleGoalSerializer,
     CoupleNoteSerializer,
     CoupleSerializer,
+    CoupleUpdateSerializer,
     JoinCoupleSerializer,
 )
 from .services import create_couple, join_couple, get_user_couple, get_or_create_invitation, leave_couple
@@ -20,19 +21,8 @@ class CreateCoupleView(APIView):
         try:
             couple, invitation = create_couple(request.user)
         except ValueError as error:
-            return Response(
-                {'detail': str(error)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        return Response(
-            {
-                'couple': CoupleSerializer(couple).data,
-                'invite_code': invitation.code,
-                'expires_at': invitation.expires_at,
-            },
-            status=status.HTTP_201_CREATED
-        )
+            return Response({'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'couple': CoupleSerializer(couple).data, 'invite_code': invitation.code, 'expires_at': invitation.expires_at}, status=status.HTTP_201_CREATED)
 
 
 class JoinCoupleView(APIView):
@@ -41,15 +31,10 @@ class JoinCoupleView(APIView):
     def post(self, request):
         serializer = JoinCoupleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         try:
             couple = join_couple(request.user, serializer.validated_data['code'])
         except ValueError as error:
-            return Response(
-                {'detail': str(error)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(CoupleSerializer(couple).data, status=status.HTTP_200_OK)
 
 
@@ -58,13 +43,17 @@ class MyCoupleView(APIView):
 
     def get(self, request):
         couple = get_user_couple(request.user)
-
         if couple is None:
-            return Response(
-                {'detail': 'Пользователь не состоит в паре.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CoupleSerializer(couple).data)
 
+    def patch(self, request):
+        couple = get_user_couple(request.user)
+        if couple is None:
+            return Response({'detail': 'Пользователь не состоит в паре.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CoupleUpdateSerializer(couple, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(CoupleSerializer(couple).data)
 
 
@@ -75,11 +64,7 @@ class LeaveCoupleView(APIView):
         try:
             leave_couple(request.user)
         except ValueError as error:
-            return Response(
-                {'detail': str(error)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -90,15 +75,8 @@ class CoupleInvitationView(APIView):
         try:
             invitation = get_or_create_invitation(request.user)
         except ValueError as error:
-            return Response(
-                {'detail': str(error)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        return Response({
-            'invite_code': invitation.code,
-            'expires_at': invitation.expires_at,
-        })
+            return Response({'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'invite_code': invitation.code, 'expires_at': invitation.expires_at})
 
 
 class CoupleGoalsView(APIView):
@@ -108,7 +86,6 @@ class CoupleGoalsView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
-
         goals = CoupleGoal.objects.filter(couple=couple)
         return Response(CoupleGoalSerializer(goals, many=True).data)
 
@@ -116,7 +93,6 @@ class CoupleGoalsView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
-
         serializer = CoupleGoalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         goal = serializer.save(couple=couple, created_by=request.user)
@@ -130,12 +106,10 @@ class CoupleGoalDetailView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
-
         try:
             goal = CoupleGoal.objects.get(id=goal_id, couple=couple)
         except CoupleGoal.DoesNotExist:
             return Response({'detail': 'Цель не найдена.'}, status=404)
-
         serializer = CoupleGoalSerializer(goal, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         goal = serializer.save()
@@ -145,12 +119,10 @@ class CoupleGoalDetailView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
-
         try:
             goal = CoupleGoal.objects.get(id=goal_id, couple=couple)
         except CoupleGoal.DoesNotExist:
             return Response({'detail': 'Цель не найдена.'}, status=404)
-
         goal.delete()
         return Response(status=204)
 
@@ -162,7 +134,6 @@ class CoupleNotesView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
-
         notes = CoupleNote.objects.filter(couple=couple)
         return Response(CoupleNoteSerializer(notes, many=True).data)
 
@@ -170,7 +141,6 @@ class CoupleNotesView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
-
         serializer = CoupleNoteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         note = serializer.save(couple=couple, author=request.user)
@@ -184,12 +154,10 @@ class CoupleNoteDetailView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Заметка не найдена.'}, status=404)
-
         try:
             note = CoupleNote.objects.get(id=note_id, couple=couple)
         except CoupleNote.DoesNotExist:
             return Response({'detail': 'Заметка не найдена.'}, status=404)
-
         serializer = CoupleNoteSerializer(note, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         note = serializer.save()
@@ -199,11 +167,9 @@ class CoupleNoteDetailView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Заметка не найдена.'}, status=404)
-
         try:
             note = CoupleNote.objects.get(id=note_id, couple=couple)
         except CoupleNote.DoesNotExist:
             return Response({'detail': 'Заметка не найдена.'}, status=404)
-
         note.delete()
         return Response(status=204)
