@@ -107,6 +107,24 @@ def join_couple(user, code):
     return invitation.couple
 
 
+def leave_couple(user):
+    membership = (
+        CoupleMember.objects
+        .select_related('couple')
+        .filter(user=user)
+        .first()
+    )
+
+    if membership is None:
+        raise ValueError('Пользователь не состоит в паре.')
+
+    couple = membership.couple
+    membership.delete()
+
+    if not couple.members.exists():
+        couple.delete()
+
+
 def get_user_couple(user):
     membership = (
         CoupleMember.objects
