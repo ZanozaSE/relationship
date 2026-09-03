@@ -53,6 +53,12 @@
   color: rgba(245,242,247,.25);
 }
 
+.profile-field small {
+  color: rgba(245,242,247,.3);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 .profile-together-field {
   margin-top: 15px;
   padding-top: 15px;
