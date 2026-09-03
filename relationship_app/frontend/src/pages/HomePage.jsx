@@ -169,6 +169,11 @@ function HomePage() {
     } finally { setIsSavingNote(false) }
   }
 
+  function cancelNewNote() {
+    setNewNote('')
+    setShowNoteForm(false)
+  }
+
   function startEditingNote(note) {
     setEditingNoteId(note.id)
     setEditingNoteContent(note.content || '')
@@ -255,15 +260,15 @@ function HomePage() {
             {goals.map((goal) => <div className={`home-goal ${goal.is_completed ? 'home-goal-completed' : ''}`} key={goal.id}><div className="home-goal-top"><div><div className="home-goal-title-row">{goal.is_completed && <Check size={14} />}<strong>{goal.title}</strong></div>{goal.description && <p>{goal.description}</p>}</div><button type="button" className="home-small-icon" onClick={() => deleteGoal(goal.id)} aria-label="Удалить цель"><Trash2 size={14} /></button></div><div className="home-goal-progress"><div className="home-goal-progress-meta"><span>{goal.current_value} из {goal.target_value}{goal.unit ? ` ${goal.unit}` : ''}</span><strong>{goal.progress}%</strong></div><div className="home-progress-track"><span style={{ width: `${goal.progress}%` }} /></div><div className="home-goal-actions"><button type="button" className="home-progress-button" onClick={() => changeGoalProgress(goal, -1)} disabled={goal.current_value <= 0}>−</button><span>{goal.deadline ? `до ${formatDeadline(goal.deadline)}` : 'без срока'}</span><button type="button" className="home-progress-button" onClick={() => changeGoalProgress(goal, 1)} disabled={goal.current_value >= goal.target_value}>+</button></div></div></div>)}
           </section>
           <section className="home-feature-card"><div className="home-feature-header"><div className="home-feature-title"><div className="home-feature-icon"><NotebookPen size={18} /></div><div><h2>Заметки</h2><p>Мысли, идеи и всё, что хочется сохранить</p></div></div><button type="button" className="home-add-button" onClick={() => setShowNoteForm((value) => !value)} aria-label="Добавить заметку"><Plus size={18} /></button></div>
-            {showNoteForm && <form className="home-inline-form" onSubmit={createNote}><textarea value={newNote} onChange={(event) => setNewNote(event.target.value)} placeholder="Напишите что-нибудь…" rows={4} autoFocus required /><button type="submit" className="primary-button" disabled={isSavingNote}>{isSavingNote ? 'Сохраняем…' : 'Сохранить заметку'}</button></form>}
+            {showNoteForm && <form className="home-inline-form" onSubmit={createNote}><textarea value={newNote} onChange={(event) => setNewNote(event.target.value)} placeholder="Напишите что-нибудь…" rows={4} autoFocus required /><div className="home-note-form-actions"><button type="button" className="secondary-button" onClick={cancelNewNote} disabled={isSavingNote}>Отменить</button><button type="submit" className="primary-button" disabled={isSavingNote}>{isSavingNote ? 'Сохраняем…' : 'Сохранить заметку'}</button></div></form>}
             {notes.length === 0 && !showNoteForm && <div className="home-feature-empty">Здесь пока пусто. Можно сохранить первую мысль или идею.</div>}
             {notes.map((note) => (
               <div className="home-note" key={note.id}>
                 {editingNoteId === note.id ? (
                   <form className="home-inline-form home-note-edit-form" onSubmit={(event) => updateNote(event, note.id)}>
                     <textarea value={editingNoteContent} onChange={(event) => setEditingNoteContent(event.target.value)} rows={4} autoFocus required />
-                    <div className="home-note-edit-actions">
-                      <button type="button" className="secondary-button" onClick={cancelEditingNote} disabled={isUpdatingNote}>Отмена</button>
+                    <div className="home-note-form-actions">
+                      <button type="button" className="secondary-button" onClick={cancelEditingNote} disabled={isUpdatingNote}>Отменить</button>
                       <button type="submit" className="primary-button" disabled={isUpdatingNote || !editingNoteContent.trim()}>{isUpdatingNote ? 'Сохраняем…' : 'Сохранить заметку'}</button>
                     </div>
                   </form>
