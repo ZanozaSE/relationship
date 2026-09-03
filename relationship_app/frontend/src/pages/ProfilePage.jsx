@@ -136,7 +136,7 @@ function ProfilePage() {
           <input type="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} maxLength={500} placeholder="Ссылка на изображение" />
         </label>
 
-        <div className="profile-info-row"><span>Имя пользователя</span><strong>{user?.username || '—'}</strong></div>
+        <div className="profile-info-row"><span>Логин</span><strong>{user?.username || '—'}</strong></div>
         <div className="profile-info-row"><span>Email</span><strong>{user?.email || 'Не указан'}</strong></div>
 
         {couple && (
