@@ -150,23 +150,6 @@ function NewMetricPage() {
 
         <div className="form-section">
           <div className="form-section-heading">
-            <span>Шкала</span>
-            <small>
-              {scaleType === 'balance'
-                ? 'Фиксированный диапазон от −99 до 99, оптимальное значение — 0'
-                : 'Фиксированный диапазон от 1 до 100, оптимальное значение — 100'}
-            </small>
-          </div>
-
-          <div className="scale-fixed-values">
-            <span>{SCALE_TYPES.find((type) => type.value === scaleType).min}</span>
-            <span>Оптимум: {SCALE_TYPES.find((type) => type.value === scaleType).target}</span>
-            <span>{SCALE_TYPES.find((type) => type.value === scaleType).max}</span>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <div className="form-section-heading">
             <span>Полюса шкалы</span>
             <small>Подписи по краям значения</small>
           </div>
