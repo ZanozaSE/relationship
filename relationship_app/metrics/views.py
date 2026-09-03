@@ -17,7 +17,7 @@ from .serializers import (
 from .services import (
     calculate_relationship_satisfaction,
     calculate_relationship_satisfaction_history,
-    get_effective_metric_values,
+    get_metric_values,
 )
 
 
@@ -63,9 +63,7 @@ class CreateMetricView(APIView):
 
         MetricImportance.objects.create(metric=metric, user=request.user, importance=100)
 
-        partner = (
-            couple.members.exclude(user=request.user).select_related('user').first()
-        )
+        partner = couple.members.exclude(user=request.user).select_related('user').first()
         if partner is not None:
             MetricImportance.objects.create(metric=metric, user=partner.user, importance=100)
 
@@ -135,11 +133,7 @@ class DeleteMetricView(APIView):
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
         try:
-            metric = CoupleMetric.objects.get(
-                id=metric_id,
-                couple=couple,
-                is_active=True,
-            )
+            metric = CoupleMetric.objects.get(id=metric_id, couple=couple, is_active=True)
         except CoupleMetric.DoesNotExist:
             return Response({'detail': 'Метрика не найдена.'}, status=404)
 
@@ -162,7 +156,7 @@ class MetricValueHistoryView(APIView):
         except CoupleMetric.DoesNotExist:
             return Response({'detail': 'Метрика не найдена.'}, status=404)
 
-        effective_values = get_effective_metric_values(metric, request.user)
+        values = get_metric_values(metric, request.user)
 
         period = request.query_params.get('period')
         if period is not None:
@@ -179,12 +173,9 @@ class MetricValueHistoryView(APIView):
             start_datetime = timezone.make_aware(
                 datetime.combine(start_date, datetime.min.time())
             )
-            effective_values = [
-                value for value in effective_values
-                if value.created_at >= start_datetime
-            ]
+            values = [value for value in values if value.created_at >= start_datetime]
 
-        values = list(reversed(effective_values))
+        values = list(reversed(values))
         serializer = MetricValueSerializer(values, many=True, context={'metric': metric})
         return Response(serializer.data)
 
@@ -198,9 +189,7 @@ class RelationshipSatisfactionView(APIView):
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
 
-        partner = (
-            couple.members.exclude(user=request.user).select_related('user').first()
-        )
+        partner = couple.members.exclude(user=request.user).select_related('user').first()
 
         return Response({
             'my_satisfaction': calculate_relationship_satisfaction(request.user, couple),
@@ -230,9 +219,7 @@ class RelationshipSatisfactionHistoryView(APIView):
         if days not in allowed_periods:
             return Response({'detail': 'Период должен быть равен 7, 30 или 365 дням.'}, status=400)
 
-        partner = (
-            couple.members.exclude(user=request.user).select_related('user').first()
-        )
+        partner = couple.members.exclude(user=request.user).select_related('user').first()
         my_history = calculate_relationship_satisfaction_history(request.user, couple, days)
         partner_history = (
             calculate_relationship_satisfaction_history(partner.user, couple, days)
