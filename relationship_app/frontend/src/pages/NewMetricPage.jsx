@@ -16,7 +16,7 @@ const SCALE_TYPES = [
   {
     value: 'level',
     label: 'Уровень',
-    description: 'От минимального значения к максимальному',
+    description: 'Значение от 0% до 100%',
     min: 1,
     max: 100,
     target: 100,
