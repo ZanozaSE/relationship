@@ -9,7 +9,7 @@ from .serializers import (
     CoupleSerializer,
     JoinCoupleSerializer,
 )
-from .services import create_couple, join_couple, get_user_couple
+from .services import create_couple, join_couple, get_user_couple, get_or_create_invitation
 from .models import CoupleGoal, CoupleNote
 
 
@@ -66,6 +66,24 @@ class MyCoupleView(APIView):
             )
 
         return Response(CoupleSerializer(couple).data)
+
+
+class CoupleInvitationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            invitation = get_or_create_invitation(request.user)
+        except ValueError as error:
+            return Response(
+                {'detail': str(error)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response({
+            'invite_code': invitation.code,
+            'expires_at': invitation.expires_at,
+        })
 
 
 class CoupleGoalsView(APIView):
@@ -165,7 +183,7 @@ class CoupleNoteDetailView(APIView):
     def delete(self, request, note_id):
         couple = get_user_couple(request.user)
         if couple is None:
-            return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
+            return Response({'detail': 'Заметка не найдена.'}, status=404)
 
         try:
             note = CoupleNote.objects.get(id=note_id, couple=couple)
