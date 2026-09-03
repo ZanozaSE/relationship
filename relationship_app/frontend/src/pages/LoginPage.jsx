@@ -46,7 +46,7 @@ function LoginPage() {
           <p className="page-eyebrow">Relationship</p>
           <h1>Вход</h1>
           <p className="page-description">
-            Войдите в аккаунт, чтобы продолжить работу с вашими отношениями.
+            Войдите в аккаунт, чтобы мы могли помочь вам в работе над вашими отношениями.
           </p>
         </div>
 
