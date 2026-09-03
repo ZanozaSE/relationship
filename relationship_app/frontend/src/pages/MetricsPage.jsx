@@ -4,7 +4,7 @@ import { apiFetch } from '../api'
 
 const BALANCE_MIN = -99
 const BALANCE_MAX = 99
-const SAVE_DEBOUNCE_MS = 10 * 60 * 1000
+const SAVE_DEBOUNCE_MS = 2 * 60 * 1000
 
 function formatValue(metric, value) {
   if (value === null || value === undefined) return '—'
@@ -16,7 +16,7 @@ function calculateSatisfaction(metric, value) {
   return Math.max(0, 100 - Math.abs(value - metric.target_value))
 }
 
-function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted }) {
+function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, onRegisterFlush }) {
   const [value, setValue] = useState(metric.latest_value)
   const [satisfaction, setSatisfaction] = useState(metric.latest_satisfaction)
   const [isSaving, setIsSaving] = useState(false)
@@ -25,6 +25,8 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted }
   const [isSavingImportance, setIsSavingImportance] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const valueSaveTimerRef = useRef(null)
+  const pendingValueRef = useRef(null)
+  const saveValueRef = useRef(null)
   const importanceSaveTimerRef = useRef(null)
 
   useEffect(() => {
@@ -68,6 +70,27 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted }
     }
   }
 
+  saveValueRef.current = saveValue
+
+  useEffect(() => {
+    if (!onRegisterFlush) return undefined
+
+    const flush = async () => {
+      if (valueSaveTimerRef.current) {
+        clearTimeout(valueSaveTimerRef.current)
+        valueSaveTimerRef.current = null
+      }
+
+      const nextValue = pendingValueRef.current
+      if (nextValue === null) return
+
+      pendingValueRef.current = null
+      await saveValueRef.current(nextValue)
+    }
+
+    return onRegisterFlush(metric.id, flush)
+  }, [metric.id, onRegisterFlush])
+
   async function saveImportance(nextImportance) {
     setIsSavingImportance(true)
     setSaveError('')
@@ -90,8 +113,13 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted }
   }
 
   function scheduleValueSave(nextValue) {
+    pendingValueRef.current = nextValue
     if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
-    valueSaveTimerRef.current = setTimeout(() => saveValue(nextValue), SAVE_DEBOUNCE_MS)
+    valueSaveTimerRef.current = setTimeout(async () => {
+      valueSaveTimerRef.current = null
+      pendingValueRef.current = null
+      await saveValue(nextValue)
+    }, SAVE_DEBOUNCE_MS)
   }
 
   function scheduleImportanceSave(nextImportance) {
@@ -124,6 +152,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted }
     setSaveError('')
     if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
     if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
+    pendingValueRef.current = null
 
     try {
       const response = await apiFetch(`/api/metrics/${metric.id}/delete/`, {
@@ -208,11 +237,21 @@ function MetricsPage() {
   const [metrics, setMetrics] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const pendingFlushesRef = useRef(new Map())
 
-  async function loadMetrics() {
+  function registerFlush(metricId, flush) {
+    pendingFlushesRef.current.set(metricId, flush)
+    return () => pendingFlushesRef.current.delete(metricId)
+  }
+
+  async function loadMetrics({ flushPending = false } = {}) {
     setError('')
     setIsLoading(true)
     try {
+      if (flushPending) {
+        await Promise.all(Array.from(pendingFlushesRef.current.values()).map((flush) => flush()))
+      }
+
       const response = await apiFetch('/api/metrics/')
       const data = await response.json().catch(() => [])
       if (!response.ok) throw new Error(data.detail || 'Не удалось загрузить метрики.')
@@ -239,6 +278,7 @@ function MetricsPage() {
   }
 
   function handleMetricDeleted(metricId) {
+    pendingFlushesRef.current.delete(metricId)
     setMetrics((currentMetrics) => currentMetrics.filter((metric) => metric.id !== metricId))
   }
 
@@ -251,13 +291,13 @@ function MetricsPage() {
           <p className="page-eyebrow">Ваши показатели</p>
           <h1>Метрики</h1>
         </div>
-        <button type="button" className="icon-button" onClick={loadMetrics} disabled={isLoading} aria-label="Обновить метрики">
+        <button type="button" className="icon-button" onClick={() => loadMetrics({ flushPending: true })} disabled={isLoading} aria-label="Обновить метрики">
           <RefreshCw size={18} className={isLoading ? 'spin' : ''} />
         </button>
       </div>
 
       {isLoading && <div className="metrics-state"><span className="state-dot" /><p>Загружаем ваши метрики…</p></div>}
-      {!isLoading && error && <div className="metrics-state error-state"><p>{error}</p><button type="button" className="secondary-button" onClick={loadMetrics}>Повторить</button></div>}
+      {!isLoading && error && <div className="metrics-state error-state"><p>{error}</p><button type="button" className="secondary-button" onClick={() => loadMetrics({ flushPending: true })}>Повторить</button></div>}
       {!isLoading && !error && metrics.length === 0 && <div className="metrics-state"><p>Пока нет активных метрик.</p><p className="state-hint">Создайте первую с помощью кнопки «+».</p></div>}
       {!isLoading && !error && metrics.length > 0 && (
         <div className="metrics-list">
@@ -268,6 +308,7 @@ function MetricsPage() {
               onValueSaved={handleValueSaved}
               onImportanceSaved={handleImportanceSaved}
               onMetricDeleted={handleMetricDeleted}
+              onRegisterFlush={registerFlush}
             />
           ))}
         </div>
