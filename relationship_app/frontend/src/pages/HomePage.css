@@ -564,6 +564,14 @@
   border-radius: 14px;
 }
 
+/* При редактировании заметки внешняя карточка не должна создавать отдельный тёмный слой. */
+.home-note:has(.home-note-edit-form) {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
 .home-note p {
   margin: 0;
   color: rgba(245,242,247,.72);
