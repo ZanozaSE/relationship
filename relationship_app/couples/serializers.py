@@ -14,11 +14,17 @@ class CoupleMemberSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    avatar_url = serializers.URLField(
+        source='user.avatar_url',
+        read_only=True,
+    )
+
     class Meta:
         model = CoupleMember
         fields = (
             'username',
             'display_name',
+            'avatar_url',
             'joined_at',
         )
 
@@ -34,8 +40,20 @@ class CoupleSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'created_at',
+            'together_days',
             'members',
         )
+
+
+class CoupleUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Couple
+        fields = ('together_days',)
+
+    def validate_together_days(self, value):
+        if value < 0:
+            raise serializers.ValidationError('Количество дней не может быть отрицательным.')
+        return value
 
 
 class JoinCoupleSerializer(serializers.Serializer):
