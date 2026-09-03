@@ -260,11 +260,11 @@ function HomePage() {
             {notes.map((note) => (
               <div className="home-note" key={note.id}>
                 {editingNoteId === note.id ? (
-                  <form className="home-note-edit-form" onSubmit={(event) => updateNote(event, note.id)}>
+                  <form className="home-inline-form home-note-edit-form" onSubmit={(event) => updateNote(event, note.id)}>
                     <textarea value={editingNoteContent} onChange={(event) => setEditingNoteContent(event.target.value)} rows={4} autoFocus required />
                     <div className="home-note-edit-actions">
                       <button type="button" className="secondary-button" onClick={cancelEditingNote} disabled={isUpdatingNote}>Отмена</button>
-                      <button type="submit" className="primary-button" disabled={isUpdatingNote || !editingNoteContent.trim()}>{isUpdatingNote ? 'Сохраняем…' : 'Сохранить'}</button>
+                      <button type="submit" className="primary-button" disabled={isUpdatingNote || !editingNoteContent.trim()}>{isUpdatingNote ? 'Сохраняем…' : 'Сохранить заметку'}</button>
                     </div>
                   </form>
                 ) : (
