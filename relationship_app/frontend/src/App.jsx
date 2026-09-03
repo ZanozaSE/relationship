@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
 import MetricsPage from './pages/MetricsPage'
 import NewMetricPage from './pages/NewMetricPage'
+import ProfilePage from './pages/ProfilePage'
 import { useAuth } from './auth/AuthContext.jsx'
 
 function PlaceholderPage({ title }) {
@@ -57,7 +58,7 @@ function App() {
           <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/metrics/new" element={<NewMetricPage />} />
           <Route path="/history" element={<PlaceholderPage title="История" />} />
-          <Route path="/profile" element={<PlaceholderPage title="Профиль" />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
