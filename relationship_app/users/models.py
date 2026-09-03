@@ -8,5 +8,10 @@ class User(AbstractUser):
         blank=True
     )
 
+    avatar_url = models.URLField(
+        max_length=500,
+        blank=True
+    )
+
     def __str__(self):
         return self.display_name or self.username
