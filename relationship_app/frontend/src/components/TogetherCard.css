@@ -3,34 +3,25 @@
   box-sizing: border-box;
   margin: 0 auto 12px;
   padding: 16px 18px;
-  background: linear-gradient(145deg, rgba(25,27,50,.92), rgba(15,17,35,.9));
-  border: 1px solid rgba(255,255,255,.07);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(240,91,167,.12), transparent 42%),
+    linear-gradient(145deg, rgba(34,24,53,.96), rgba(15,17,35,.92));
+  border: 1px solid rgba(240,91,167,.13);
   border-radius: 21px;
-  box-shadow: 0 16px 36px rgba(0,0,0,.18);
+  box-shadow: 0 16px 36px rgba(0,0,0,.18), 0 0 28px rgba(240,91,167,.06);
 }
 
 .home-together-heading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-}
-
-.home-together-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  color: #f05ba7;
-  background: rgba(240,91,167,.09);
-  border: 1px solid rgba(240,91,167,.15);
-  border-radius: 11px;
+  gap: 2px;
+  text-align: center;
 }
 
 .home-together-heading h2 {
-  margin: 2px 0 0;
+  margin: 0;
   color: #f5f2f7;
   font-size: 17px;
   font-weight: 750;
