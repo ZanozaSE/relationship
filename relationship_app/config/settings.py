@@ -94,6 +94,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 PASSWORD_RESET_TIMEOUT = 3600
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:5173')
 
 
 # Internationalization
