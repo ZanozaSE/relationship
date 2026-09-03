@@ -97,6 +97,27 @@ export async function login(username, password) {
   return data
 }
 
+export async function register(username, email, password) {
+  const response = await fetch('/api/auth/register/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, email, password }),
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const firstError = Object.values(data).flat?.()[0]
+    throw new Error(
+      data.detail || firstError || 'Не удалось создать аккаунт.',
+    )
+  }
+
+  return data
+}
+
 export async function getCurrentUser() {
   const response = await apiFetch('/api/auth/me/')
 
