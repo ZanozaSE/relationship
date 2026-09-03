@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { LogOut, Save, UserRound, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api'
 import { useAuth } from '../auth/AuthContext.jsx'
 import './ProfilePage.css'
 import './ProfileEdit.css'
 
 function ProfilePage() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [couple, setCouple] = useState(null)
   const [displayName, setDisplayName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
@@ -103,14 +105,30 @@ function ProfilePage() {
     }
   }
 
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   const partner = couple?.members?.find((member) => member.username !== user?.username)
 
   return (
     <section className="page profile-page">
       <div className="page-heading">
-        <p className="page-eyebrow">Настройки</p>
-        <h1>Профиль</h1>
-        <p className="page-description">Ваш аккаунт и состояние пары.</p>
+        <div>
+          <p className="page-eyebrow">Настройки</p>
+          <h1>Профиль</h1>
+          <p className="page-description">Ваш аккаунт и состояние пары.</p>
+        </div>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={handleLogout}
+          aria-label="Выйти из учётной записи"
+          title="Выйти"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
 
       {error && <p className="profile-message error">{error}</p>}
