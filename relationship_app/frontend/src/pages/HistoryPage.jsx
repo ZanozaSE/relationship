@@ -115,7 +115,7 @@ function HistoryPage() {
           </section>
 
           <section className="history-metrics-section">
-            <div className="history-section-heading"><div><p className="page-eyebrow">По показателям</p><h2>История метрик</h2></div><span>{metricHistories.length}</span></div>
+            <div className="history-section-heading"><div><h2>История метрик</h2></div></div>
             {metricHistories.length === 0 && <div className="history-feature-empty"><SlidersHorizontal size={20} /><p>Пока нет активных метрик.</p></div>}
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
