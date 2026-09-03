@@ -118,6 +118,53 @@ export async function register(username, email, password) {
   return data
 }
 
+export async function requestPasswordReset(email) {
+  const response = await fetch('/api/auth/password-reset/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const firstError = Object.values(data).flat?.()[0]
+    throw new Error(
+      data.detail || firstError || 'Не удалось отправить инструкцию.',
+    )
+  }
+
+  return data
+}
+
+export async function confirmPasswordReset(uid, token, newPassword, newPasswordConfirm) {
+  const response = await fetch('/api/auth/password-reset/confirm/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      uid,
+      token,
+      new_password: newPassword,
+      new_password_confirm: newPasswordConfirm,
+    }),
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const firstError = Object.values(data).flat?.()[0]
+    throw new Error(
+      data.detail || firstError || 'Не удалось изменить пароль.',
+    )
+  }
+
+  return data
+}
+
 export async function getCurrentUser() {
   const response = await apiFetch('/api/auth/me/')
 
