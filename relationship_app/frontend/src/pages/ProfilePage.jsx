@@ -3,6 +3,7 @@ import { LogOut, Save, UserRound, Users } from 'lucide-react'
 import { apiFetch } from '../api'
 import { useAuth } from '../auth/AuthContext.jsx'
 import './ProfilePage.css'
+import './ProfileEdit.css'
 
 function ProfilePage() {
   const { user } = useAuth()
@@ -20,10 +21,7 @@ function ProfilePage() {
     setIsLoading(true)
     setError('')
     try {
-      const [userResponse, coupleResponse] = await Promise.all([
-        apiFetch('/api/auth/me/'),
-        apiFetch('/api/couples/me/'),
-      ])
+      const [userResponse, coupleResponse] = await Promise.all([apiFetch('/api/auth/me/'), apiFetch('/api/couples/me/')])
       const userData = await userResponse.json().catch(() => ({}))
       if (!userResponse.ok) throw new Error(userData.detail || 'Не удалось загрузить профиль.')
       setDisplayName(userData.display_name || '')
@@ -53,19 +51,13 @@ function ProfilePage() {
     setError('')
     setSuccess('')
     try {
-      const profileResponse = await apiFetch('/api/auth/profile/', {
-        method: 'PATCH',
-        body: JSON.stringify({ display_name: displayName.trim(), avatar_url: avatarUrl.trim() }),
-      })
+      const profileResponse = await apiFetch('/api/auth/profile/', { method: 'PATCH', body: JSON.stringify({ display_name: displayName.trim(), avatar_url: avatarUrl.trim() }) })
       const profileData = await profileResponse.json().catch(() => ({}))
       if (!profileResponse.ok) throw new Error(profileData.detail || 'Не удалось сохранить профиль.')
 
       if (couple) {
         const days = Number(togetherDays)
-        const coupleResponse = await apiFetch('/api/couples/me/', {
-          method: 'PATCH',
-          body: JSON.stringify({ together_days: Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0 }),
-        })
+        const coupleResponse = await apiFetch('/api/couples/me/', { method: 'PATCH', body: JSON.stringify({ together_days: Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0 }) })
         const coupleData = await coupleResponse.json().catch(() => ({}))
         if (!coupleResponse.ok) throw new Error(coupleData.detail || 'Не удалось сохранить количество дней вместе.')
         setCouple(coupleData)
