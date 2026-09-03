@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Couple, CoupleGoal, CoupleMember, CoupleNote
@@ -34,25 +35,32 @@ class CoupleSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True
     )
+    together_days = serializers.SerializerMethodField()
 
     class Meta:
         model = Couple
         fields = (
             'id',
             'created_at',
+            'relationship_start_date',
             'together_days',
             'members',
         )
+
+    def get_together_days(self, obj):
+        if obj.relationship_start_date is None:
+            return 0
+        return max(0, (timezone.localdate() - obj.relationship_start_date).days)
 
 
 class CoupleUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Couple
-        fields = ('together_days',)
+        fields = ('relationship_start_date',)
 
-    def validate_together_days(self, value):
-        if value < 0:
-            raise serializers.ValidationError('Количество дней не может быть отрицательным.')
+    def validate_relationship_start_date(self, value):
+        if value > timezone.localdate():
+            raise serializers.ValidationError('Дата начала отношений не может быть в будущем.')
         return value
 
 
