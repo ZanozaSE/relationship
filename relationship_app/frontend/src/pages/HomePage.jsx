@@ -217,7 +217,7 @@ function HomePage() {
   return (
     <section className="page home-page">
       <div className="page-heading home-page-heading">
-        <div><p className="page-eyebrow">Ваши отношения</p><h1>Главная</h1></div>
+        <div><p className="page-eyebrow">Общая информация</p><h1>Главная</h1></div>
         <button type="button" className="icon-button" onClick={loadHome} disabled={isLoading} aria-label="Обновить главную"><RefreshCw size={18} className={isLoading ? 'spin' : ''} /></button>
       </div>
       {isLoading && <div className="home-state"><span className="state-dot" /><p>Загружаем состояние отношений…</p></div>}
