@@ -1,0 +1,322 @@
+.history-page {
+  padding-top: 6px;
+}
+
+.history-page-heading {
+  margin-bottom: 18px;
+}
+
+.history-page-heading h1 {
+  margin-bottom: 0;
+}
+
+.history-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.history-overview-card,
+.history-metric-card {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,.07);
+  background: linear-gradient(145deg, rgba(25,27,50,.92), rgba(15,17,35,.9));
+  border-radius: 24px;
+  box-shadow: 0 16px 36px rgba(0,0,0,.18);
+}
+
+.history-overview-card {
+  padding: 20px 18px 12px;
+}
+
+.history-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.history-card-icon,
+.history-metric-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #f05ba7;
+  background: rgba(240,91,167,.1);
+  border: 1px solid rgba(240,91,167,.18);
+  box-shadow: 0 0 22px rgba(240,91,167,.1);
+}
+
+.history-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+
+.history-card-title h2,
+.history-section-heading h2,
+.history-metric-title-row h3 {
+  margin: 0;
+  color: #f5f2f7;
+}
+
+.history-card-title h2 {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.history-card-title p,
+.history-metric-title-row span {
+  margin: 4px 0 0;
+  color: rgba(245,242,247,.38);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.history-period-switcher {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  flex: 0 0 auto;
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 11px;
+}
+
+.history-period-switcher button {
+  min-width: 40px;
+  padding: 6px 7px;
+  border: 0;
+  border-radius: 8px;
+  color: rgba(245,242,247,.38);
+  background: transparent;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.history-period-switcher button.active {
+  color: #f5f2f7;
+  background: rgba(240,91,167,.14);
+  box-shadow: inset 0 0 0 1px rgba(240,91,167,.16);
+}
+
+.history-chart {
+  margin-top: 10px;
+}
+
+.history-empty-chart {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: rgba(245,242,247,.28);
+  text-align: center;
+}
+
+.history-empty-chart svg {
+  color: rgba(240,91,167,.65);
+}
+
+.history-empty-chart p {
+  margin: 0;
+  color: rgba(245,242,247,.5);
+  font-size: 11px;
+}
+
+.history-empty-chart span {
+  max-width: 220px;
+  color: rgba(245,242,247,.28);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.history-metrics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 2px 2px 0;
+}
+
+.history-section-heading .page-eyebrow {
+  margin-bottom: 4px;
+}
+
+.history-section-heading h2 {
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.history-section-heading > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  color: rgba(245,242,247,.55);
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.history-metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-metric-card {
+  padding: 15px 14px 12px;
+}
+
+.history-metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-metric-title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.history-metric-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.history-metric-title-row h3 {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-metric-current {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.history-metric-current strong {
+  color: #f05ba7;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.history-metric-current span {
+  color: rgba(245,242,247,.38);
+  font-size: 9px;
+}
+
+.history-metric-chart {
+  margin-top: 6px;
+}
+
+.history-metric-empty {
+  padding: 26px 8px;
+  color: rgba(245,242,247,.3);
+  font-size: 9px;
+  text-align: center;
+}
+
+.history-metric-events {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255,255,255,.055);
+}
+
+.history-metric-event {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 2px;
+  border-bottom: 1px solid rgba(255,255,255,.045);
+}
+
+.history-metric-event:last-child {
+  border-bottom: 0;
+}
+
+.history-metric-event span {
+  color: rgba(245,242,247,.3);
+  font-size: 9px;
+}
+
+.history-metric-event strong {
+  color: rgba(245,242,247,.75);
+  font-size: 10px;
+}
+
+.history-metric-event em {
+  min-width: 42px;
+  color: #f05ba7;
+  font-size: 9px;
+  font-style: normal;
+  text-align: right;
+}
+
+.history-feature-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 100px;
+  padding: 18px;
+  box-sizing: border-box;
+  color: rgba(245,242,247,.3);
+  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 18px;
+  font-size: 10px;
+}
+
+.history-feature-empty svg {
+  color: rgba(240,91,167,.65);
+}
+
+.history-feature-empty p {
+  margin: 0;
+}
+
+@media (max-width: 420px) {
+  .history-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .history-period-switcher {
+    align-self: flex-end;
+  }
+}
