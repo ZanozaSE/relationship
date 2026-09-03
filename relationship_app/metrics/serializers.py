@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import CoupleMetric, MetricImportance, MetricValue
+from .services import get_latest_effective_metric_value
 
 
 class CoupleMetricSerializer(serializers.ModelSerializer):
@@ -32,22 +33,12 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
 
     def get_latest_value(self, obj):
         user = self.context['request'].user
-        metric_value = (
-            obj.values
-            .filter(user=user)
-            .order_by('-created_at', '-id')
-            .first()
-        )
+        metric_value = get_latest_effective_metric_value(obj, user)
         return metric_value.value if metric_value else None
 
     def get_latest_satisfaction(self, obj):
         user = self.context['request'].user
-        metric_value = (
-            obj.values
-            .filter(user=user)
-            .order_by('-created_at', '-id')
-            .first()
-        )
+        metric_value = get_latest_effective_metric_value(obj, user)
         return metric_value.satisfaction if metric_value else None
 
 
