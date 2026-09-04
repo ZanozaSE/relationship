@@ -107,10 +107,16 @@ class MetricImportanceSerializer(serializers.ModelSerializer):
 
 
 class MetricValueSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    user_display_name = serializers.SerializerMethodField()
+
     class Meta:
         model = MetricValue
-        fields = ('id', 'value', 'created_at', 'satisfaction')
-        read_only_fields = ('id', 'created_at', 'satisfaction')
+        fields = ('id', 'value', 'created_at', 'satisfaction', 'user_id', 'user_display_name')
+        read_only_fields = ('id', 'created_at', 'satisfaction', 'user_id', 'user_display_name')
+
+    def get_user_display_name(self, obj):
+        return obj.user.display_name or obj.user.username
 
     def validate_value(self, value):
         metric = self.context.get('metric')
