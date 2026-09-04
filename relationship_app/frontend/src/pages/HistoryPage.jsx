@@ -175,7 +175,7 @@ function HistoryPage() {
                               dataKey="eventIndex"
                               domain={[0, Math.max(chartData.length - 1, 1)]}
                               ticks={chartData.map((item) => item.eventIndex)}
-                              tickFormatter={(value) => formatDateTime(chartData[value]?.timestamp)}
+                              tickFormatter={(value) => formatDate(chartData[value]?.timestamp)}
                               tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }}
                               axisLine={false}
                               tickLine={false}
