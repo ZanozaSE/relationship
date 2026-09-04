@@ -293,11 +293,11 @@ function HomePage() {
                   </form>
                 ) : (
                   <>
-                    {note.author === currentUser?.id && <button type="button" className={`home-note-privacy-button${note.is_private ? ' active' : ''}`} onClick={() => toggleNotePrivacy(note)} aria-label={note.is_private ? 'Сделать заметку видимой партнёру' : 'Сделать заметку личной'} aria-pressed={note.is_private} title={note.is_private ? 'Личная заметка' : 'Видно партнёру'} style={{ position: 'absolute', top: 10, right: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, padding: 0, color: note.is_private ? '#f05ba7' : 'rgba(245,242,247,.34)', background: note.is_private ? 'rgba(240,91,167,.08)' : 'transparent', border: `1px solid ${note.is_private ? 'rgba(240,91,167,.45)' : 'rgba(255,255,255,.12)'}`, borderRadius: 5, cursor: 'pointer' }}>{note.is_private && <Check size={14} strokeWidth={2.4} />}</button>}
                     <p style={{ paddingRight: 28 }}>{note.content}</p>
                     <div className="home-note-footer">
                       <span>{new Date(note.updated_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
                       <div className="home-note-actions">
+                        {note.author === currentUser?.id && <div className="home-note-privacy-control"><span>Личная</span><button type="button" className={`home-note-privacy-button${note.is_private ? ' active' : ''}`} onClick={() => toggleNotePrivacy(note)} aria-label={note.is_private ? 'Сделать заметку видимой партнёру' : 'Сделать заметку личной'} aria-pressed={note.is_private} title={note.is_private ? 'Личная заметка' : 'Видно партнёру'}>{note.is_private && <Check size={14} strokeWidth={2.4} />}</button></div>}
                         <button type="button" className="home-small-icon home-note-edit-button" onClick={() => startEditingNote(note)} aria-label="Редактировать заметку"><Pencil size={14} /></button>
                         <button type="button" className="home-small-icon" onClick={() => deleteNote(note.id)} aria-label="Удалить заметку"><Trash2 size={14} /></button>
                       </div>
