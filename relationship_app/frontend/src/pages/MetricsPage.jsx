@@ -194,7 +194,6 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
           </button>
           <div className="metric-step-track" aria-hidden="true">
             <span className="metric-step-fill" style={{ width: `${(importance / 200) * 100}%` }} />
-            <span className="metric-step-target" style={{ left: '50%' }} />
             <span className="metric-step-thumb" style={{ left: `${(importance / 200) * 100}%` }} />
           </div>
           <button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting} aria-label="Увеличить важность">
