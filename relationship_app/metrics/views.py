@@ -183,7 +183,6 @@ class MetricValueHistoryView(APIView):
             couple.members.values_list('user_id', flat=True)
         )
         values = [value for value in values if value.user_id in partner_user_ids]
-        values = list(reversed(values))
 
         serializer = MetricValueSerializer(values, many=True, context={'metric': metric})
         return Response(serializer.data)
