@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Minus, Plus, RefreshCw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { apiFetch } from '../api'
+import './MetricsPage.css'
 
 const BALANCE_MIN = -99
 const BALANCE_MAX = 99
