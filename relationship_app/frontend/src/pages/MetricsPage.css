@@ -63,25 +63,28 @@
   border-radius: 999px;
 }
 
-.metric-satisfaction-fill {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, #8e2c69, #ec4899);
-  border-radius: inherit;
+.metric-satisfaction-fill,
+.metric-satisfaction-partner-fill {
+  position: absolute;
+  left: 0;
+  box-sizing: border-box;
+  border-radius: 999px;
   transition: width 160ms ease;
 }
 
-.metric-satisfaction-partner-marker {
-  position: absolute;
+.metric-satisfaction-fill {
+  top: 0;
+  z-index: 2;
+  height: 7px;
+  background: linear-gradient(90deg, #8e2c69, #ec4899);
+}
+
+.metric-satisfaction-partner-fill {
+  top: 2px;
   z-index: 3;
-  top: 50%;
-  width: 3px;
-  height: 13px;
-  background: #9782ff;
-  border-radius: 999px;
-  box-shadow: 0 0 8px rgba(151,130,255,.5);
-  transform: translate(-50%, -50%);
-  transition: left 160ms ease;
+  height: 3px;
+  background: linear-gradient(90deg, #6555c7, #9782ff);
+  box-shadow: 0 0 8px rgba(151,130,255,.28);
 }
 
 .metric-step-partner-thumb {
