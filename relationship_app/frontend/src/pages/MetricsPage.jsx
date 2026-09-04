@@ -49,6 +49,8 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const currentValue = value ?? metric.target_value
   const position = range > 0 ? ((currentValue - minValue) / range) * 100 : 50
   const targetPosition = range > 0 ? ((metric.target_value - minValue) / range) * 100 : 50
+  const fillStart = metric.scale_type === 'balance' ? Math.min(position, targetPosition) : 0
+  const fillWidth = metric.scale_type === 'balance' ? Math.abs(position - targetPosition) : position
 
   async function saveValue(nextValue) {
     setIsSaving(true)
@@ -214,7 +216,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
             <Minus size={18} />
           </button>
           <div className="metric-step-track metric-value-track" aria-hidden="true">
-            <span className="metric-step-fill" style={{ width: `${Math.max(0, Math.min(100, position))}%` }} />
+            <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, fillStart))}%`, width: `${Math.max(0, Math.min(100, fillWidth))}%` }} />
             <span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
             <span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} />
           </div>
