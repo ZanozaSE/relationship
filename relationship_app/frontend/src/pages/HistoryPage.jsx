@@ -119,13 +119,17 @@ function HistoryPage() {
             {metricHistories.length === 0 && <div className="history-feature-empty"><SlidersHorizontal size={20} /><p>Пока нет активных метрик.</p></div>}
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
-                const chartData = values.slice().reverse().map((item) => ({
+                const chronologicalValues = values.slice().reverse()
+                const userIds = [...new Set(values.map((item) => item.user_id))]
+                const chartData = chronologicalValues.map((item) => ({
                   ...item,
                   label: formatDate(item.created_at),
-                  satisfaction_value: item.satisfaction,
+                  [`user_${item.user_id}`]: item.satisfaction,
                 }))
                 const latest = values[0]
-                const userIds = [...new Set(values.map((item) => item.user_id))]
+                const visibleEvents = userIds
+                  .flatMap((userId) => values.filter((item) => item.user_id === userId).slice(0, 4))
+                  .sort((first, second) => new Date(second.created_at) - new Date(first.created_at))
                 const hasPartnerHistory = userIds.length > 1
 
                 return (
@@ -133,7 +137,7 @@ function HistoryPage() {
                     <div className="history-metric-header">
                       <div className="history-metric-title-row">
                         <span className="history-metric-icon"><SlidersHorizontal size={15} /></span>
-                        <div><h3>{metric.name}</h3><span>{values.length} {values.length === 1 ? 'изменение' : values.length < 5 ? 'изменения' : 'изменений'} за выбранный период</span></div>
+                        <div><h3>{metric.name}</h3><span>{visibleEvents.length} {visibleEvents.length === 1 ? 'изменение' : visibleEvents.length < 5 ? 'изменения' : 'изменений'} показано за выбранный период</span></div>
                       </div>
                       <div className="history-metric-current"><strong>{formatSatisfaction(latest?.satisfaction)}</strong></div>
                     </div>
@@ -148,14 +152,13 @@ function HistoryPage() {
                             <Tooltip contentStyle={{ background: 'rgba(12,14,29,.96)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, fontSize: 11 }} labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }} formatter={(value) => formatSatisfaction(value)} />
                             {hasPartnerHistory ? (
                               userIds.map((userId) => {
-                                const userValues = chartData.filter((item) => item.user_id === userId)
+                                const userValues = values.filter((item) => item.user_id === userId)
                                 const userName = userValues[0]?.user_display_name || 'Участник пары'
                                 return (
                                   <Line
                                     key={userId}
-                                    data={userValues}
                                     type="monotone"
-                                    dataKey="satisfaction_value"
+                                    dataKey={`user_${userId}`}
                                     name={userName}
                                     stroke={userId === userIds[0] ? '#f05ba7' : '#9b7cff'}
                                     strokeWidth={2.5}
@@ -165,16 +168,16 @@ function HistoryPage() {
                                 )
                               })
                             ) : (
-                              <Line type="monotone" dataKey="satisfaction_value" name={latest?.user_display_name || 'Вы'} stroke="#f05ba7" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }} activeDot={{ r: 4 }} />
+                              <Line type="monotone" dataKey={`user_${latest?.user_id}`} name={latest?.user_display_name || 'Вы'} stroke="#f05ba7" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }} activeDot={{ r: 4 }} />
                             )}
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
                     ) : <div className="history-metric-empty">За выбранный период изменений нет.</div>}
 
-                    {values.length > 0 && (
+                    {visibleEvents.length > 0 && (
                       <div className="history-metric-events">
-                        {values.slice(0, 10).map((item) => (
+                        {visibleEvents.map((item) => (
                           <div className="history-metric-event" key={item.id}>
                             <span>{formatDateTime(item.created_at)} · {item.user_display_name || 'Участник пары'}</span>
                             <strong>{formatSatisfaction(item.satisfaction)}</strong>
