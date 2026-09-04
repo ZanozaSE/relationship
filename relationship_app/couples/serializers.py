@@ -5,47 +5,22 @@ from .models import Couple, CoupleGoal, CoupleMember, CoupleNote
 
 
 class CoupleMemberSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        source='user.username',
-        read_only=True
-    )
-
-    display_name = serializers.CharField(
-        source='user.display_name',
-        read_only=True
-    )
-
-    avatar_url = serializers.URLField(
-        source='user.avatar_url',
-        read_only=True,
-    )
+    username = serializers.CharField(source='user.username', read_only=True)
+    display_name = serializers.CharField(source='user.display_name', read_only=True)
+    avatar_url = serializers.URLField(source='user.avatar_url', read_only=True)
 
     class Meta:
         model = CoupleMember
-        fields = (
-            'username',
-            'display_name',
-            'avatar_url',
-            'joined_at',
-        )
+        fields = ('username', 'display_name', 'avatar_url', 'joined_at')
 
 
 class CoupleSerializer(serializers.ModelSerializer):
-    members = CoupleMemberSerializer(
-        many=True,
-        read_only=True
-    )
+    members = CoupleMemberSerializer(many=True, read_only=True)
     together_days = serializers.SerializerMethodField()
 
     class Meta:
         model = Couple
-        fields = (
-            'id',
-            'created_at',
-            'relationship_start_date',
-            'together_days',
-            'members',
-        )
+        fields = ('id', 'created_at', 'relationship_start_date', 'together_days', 'members')
 
     def get_together_days(self, obj):
         if obj.relationship_start_date is None:
@@ -65,9 +40,7 @@ class CoupleUpdateSerializer(serializers.ModelSerializer):
 
 
 class JoinCoupleSerializer(serializers.Serializer):
-    code = serializers.CharField(
-        max_length=32
-    )
+    code = serializers.CharField(max_length=32)
 
 
 class CoupleGoalSerializer(serializers.ModelSerializer):
@@ -75,47 +48,21 @@ class CoupleGoalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CoupleGoal
-        fields = (
-            'id',
-            'title',
-            'description',
-            'current_value',
-            'target_value',
-            'unit',
-            'deadline',
-            'progress',
-            'is_completed',
-            'created_by',
-            'created_at',
-        )
-        read_only_fields = (
-            'id',
-            'progress',
-            'is_completed',
-            'created_by',
-            'created_at',
-        )
+        fields = ('id', 'title', 'description', 'current_value', 'target_value', 'unit', 'deadline', 'progress', 'is_completed', 'created_by', 'created_at')
+        read_only_fields = ('id', 'progress', 'is_completed', 'created_by', 'created_at')
 
     def validate(self, attrs):
         target_value = attrs.get('target_value', getattr(self.instance, 'target_value', None))
         current_value = attrs.get('current_value', getattr(self.instance, 'current_value', 0))
-
         if target_value is not None and target_value <= 0:
-            raise serializers.ValidationError({
-                'target_value': 'Целевое значение должно быть больше нуля.'
-            })
-
+            raise serializers.ValidationError({'target_value': 'Целевое значение должно быть больше нуля.'})
         if current_value < 0:
-            raise serializers.ValidationError({
-                'current_value': 'Текущее значение не может быть отрицательным.'
-            })
-
+            raise serializers.ValidationError({'current_value': 'Текущее значение не может быть отрицательным.'})
         return attrs
 
     def update(self, instance, validated_data):
         for field, value in validated_data.items():
             setattr(instance, field, value)
-
         instance.is_completed = instance.current_value >= instance.target_value
         instance.save()
         return instance
@@ -124,19 +71,8 @@ class CoupleGoalSerializer(serializers.ModelSerializer):
 class CoupleNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = CoupleNote
-        fields = (
-            'id',
-            'content',
-            'author',
-            'created_at',
-            'updated_at',
-        )
-        read_only_fields = (
-            'id',
-            'author',
-            'created_at',
-            'updated_at',
-        )
+        fields = ('id', 'content', 'author', 'is_private', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'author', 'created_at', 'updated_at')
 
     def validate_content(self, value):
         if not value.strip():
