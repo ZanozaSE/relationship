@@ -90,7 +90,7 @@ function HistoryPage() {
   return (
     <section className="page history-page">
       <div className="page-heading history-page-heading">
-        <div><p className="page-eyebrow">Ваши изменения</p><h1>История</h1></div>
+        <div><p className="page-eyebrow">Изменения пары</p><h1>История</h1></div>
         <button type="button" className="icon-button history-refresh-button" onClick={loadHistory} disabled={isLoading} aria-label="Обновить историю">
           <RefreshCw size={18} className={isLoading ? 'spin' : ''} />
         </button>
@@ -119,13 +119,12 @@ function HistoryPage() {
             {metricHistories.length === 0 && <div className="history-feature-empty"><SlidersHorizontal size={20} /><p>Пока нет активных метрик.</p></div>}
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
-                const chartData = values.map((item) => ({
+                const chartData = values.slice().reverse().map((item) => ({
                   ...item,
                   label: formatDate(item.created_at),
                   satisfaction_value: item.satisfaction,
-                  user_series: item.user_id,
                 }))
-                const latest = values[values.length - 1]
+                const latest = values[0]
                 const userIds = [...new Set(values.map((item) => item.user_id))]
                 const hasPartnerHistory = userIds.length > 1
 
@@ -175,7 +174,7 @@ function HistoryPage() {
 
                     {values.length > 0 && (
                       <div className="history-metric-events">
-                        {values.slice().reverse().slice(0, 10).map((item) => (
+                        {values.slice(0, 10).map((item) => (
                           <div className="history-metric-event" key={item.id}>
                             <span>{formatDateTime(item.created_at)} · {item.user_display_name || 'Участник пары'}</span>
                             <strong>{formatSatisfaction(item.satisfaction)}</strong>
