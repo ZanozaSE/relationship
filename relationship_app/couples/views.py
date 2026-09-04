@@ -159,6 +159,9 @@ class CoupleNoteDetailView(APIView):
         except CoupleNote.DoesNotExist:
             return Response({'detail': 'Заметка не найдена.'}, status=404)
 
+        if note.is_private and note.author_id != request.user.id:
+            return Response({'detail': 'Заметка недоступна.'}, status=404)
+
         if 'is_private' in request.data and note.author_id != request.user.id:
             return Response({'detail': 'Изменять приватность заметки может только её автор.'}, status=403)
 
@@ -175,5 +178,7 @@ class CoupleNoteDetailView(APIView):
             note = CoupleNote.objects.get(id=note_id, couple=couple)
         except CoupleNote.DoesNotExist:
             return Response({'detail': 'Заметка не найдена.'}, status=404)
+        if note.is_private and note.author_id != request.user.id:
+            return Response({'detail': 'Заметка недоступна.'}, status=404)
         note.delete()
         return Response(status=204)
