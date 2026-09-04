@@ -7,7 +7,10 @@ function AppLayout() {
 
   return (
     <div className="app-shell">
-      <main className="app-content">
+      <main
+        className="app-content"
+        style={{ position: 'relative', left: 'calc((100vw - 100%) / 2)' }}
+      >
         {location.pathname === '/home' && <TogetherCard />}
         <Outlet />
       </main>
