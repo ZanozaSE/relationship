@@ -130,17 +130,15 @@ function HistoryPage() {
                   ]),
                 )
 
-                // В отличие от общей удовлетворённости, история конкретной
-                // метрики должна содержать каждое сохранённое изменение.
-                // Поэтому здесь точка графика создаётся для каждого события,
-                // а не для каждого календарного дня.
+                // Каждое сохранённое изменение остаётся отдельной точкой.
+                // Временная координата точки — реальный timestamp события,
+                // поэтому курсор Tooltip и активная точка используют одну и ту же ось.
                 const stateByUser = Object.fromEntries(userIds.map((userId) => [userId, null]))
                 const chartData = chronologicalValues.map((item) => {
                   stateByUser[item.user_id] = item.satisfaction
 
                   return {
-                    timestamp: item.created_at,
-                    label: formatDateTime(item.created_at),
+                    timestamp: new Date(item.created_at).getTime(),
                     ...Object.fromEntries(
                       userIds.map((userId) => [`user_${userId}`, stateByUser[userId]]),
                     ),
@@ -167,9 +165,25 @@ function HistoryPage() {
                         <ResponsiveContainer width="100%" height={150}>
                           <LineChart data={chartData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
                             <CartesianGrid stroke="rgba(255,255,255,.05)" vertical={false} />
-                            <XAxis dataKey="label" tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                            <XAxis
+                              type="number"
+                              dataKey="timestamp"
+                              scale="time"
+                              domain={['dataMin', 'dataMax']}
+                              tickFormatter={(value) => formatDateTime(value)}
+                              tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }}
+                              axisLine={false}
+                              tickLine={false}
+                              interval="preserveStartEnd"
+                            />
                             <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: 'rgba(245,242,247,.24)', fontSize: 8 }} axisLine={false} tickLine={false} width={30} />
-                            <Tooltip contentStyle={{ background: 'rgba(12,14,29,.96)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, fontSize: 11 }} labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }} formatter={(value) => formatSatisfaction(value)} />
+                            <Tooltip
+                              cursor={{ stroke: 'rgba(255,255,255,.45)', strokeWidth: 1 }}
+                              contentStyle={{ background: 'rgba(12,14,29,.96)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, fontSize: 11 }}
+                              labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }}
+                              labelFormatter={(value) => formatDateTime(value)}
+                              formatter={(value) => formatSatisfaction(value)}
+                            />
                             {userIds.map((userId) => (
                               <Line
                                 key={userId}
@@ -179,7 +193,7 @@ function HistoryPage() {
                                 stroke={userId === userIds[0] ? '#f05ba7' : '#9b7cff'}
                                 strokeWidth={2.5}
                                 dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }}
-                                activeDot={{ r: 4 }}
+                                activeDot={{ r: 4, stroke: '#ffffff', strokeWidth: 2, fill: '#15172c' }}
                                 connectNulls
                               />
                             ))}
