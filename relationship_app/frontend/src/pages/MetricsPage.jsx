@@ -30,16 +30,9 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const importanceTimer = useRef(null)
   const saveValueRef = useRef(null)
 
-  useEffect(() => {
-    setValue(metric.latest_value)
-    setSatisfaction(metric.latest_satisfaction)
-  }, [metric.latest_value, metric.latest_satisfaction])
-
+  useEffect(() => { setValue(metric.latest_value); setSatisfaction(metric.latest_satisfaction) }, [metric.latest_value, metric.latest_satisfaction])
   useEffect(() => setImportance(metric.importance ?? 100), [metric.id, metric.importance])
-  useEffect(() => () => {
-    if (valueTimer.current) clearTimeout(valueTimer.current)
-    if (importanceTimer.current) clearTimeout(importanceTimer.current)
-  }, [])
+  useEffect(() => () => { if (valueTimer.current) clearTimeout(valueTimer.current); if (importanceTimer.current) clearTimeout(importanceTimer.current) }, [])
 
   const minValue = metric.scale_type === 'balance' ? BALANCE_MIN : metric.min_value
   const maxValue = metric.scale_type === 'balance' ? BALANCE_MAX : metric.max_value
@@ -70,12 +63,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
 
   useEffect(() => {
     if (!onRegisterFlush) return undefined
-    const flush = async () => {
-      if (valueTimer.current) clearTimeout(valueTimer.current)
-      const next = pendingValue.current
-      pendingValue.current = null
-      if (next != null) await saveValueRef.current(next)
-    }
+    const flush = async () => { if (valueTimer.current) clearTimeout(valueTimer.current); const next = pendingValue.current; pendingValue.current = null; if (next != null) await saveValueRef.current(next) }
     return onRegisterFlush(metric.id, flush)
   }, [metric.id, onRegisterFlush])
 
@@ -106,12 +94,9 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   async function deleteMetric() {
     if (isDeleting || isSaving || isSavingImportance || !window.confirm(`Удалить метрику «${metric.name}»?\n\nОна исчезнет из списка, а история значений сохранится.`)) return
     setIsDeleting(true); setSaveError('')
-    if (valueTimer.current) clearTimeout(valueTimer.current)
-    if (importanceTimer.current) clearTimeout(importanceTimer.current)
-    pendingValue.current = null
+    if (valueTimer.current) clearTimeout(valueTimer.current); if (importanceTimer.current) clearTimeout(importanceTimer.current); pendingValue.current = null
     try {
-      const response = await apiFetch(`/api/metrics/${metric.id}/delete/`, { method: 'DELETE' })
-      const data = await response.json().catch(() => ({}))
+      const response = await apiFetch(`/api/metrics/${metric.id}/delete/`, { method: 'DELETE' }); const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || 'Не удалось удалить метрику.')
       onMetricDeleted?.(metric.id)
     } catch (e) { setSaveError(e.message || 'Не удалось удалить метрику.'); setIsDeleting(false) }
@@ -125,9 +110,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
       <div className="metric-stepper"><button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting}><Minus size={16} /></button><div className="metric-step-track metric-importance-track"><span className="metric-step-fill" style={{ width: `${importancePosition}%` }} />{partnerImportancePosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerImportancePosition))}%` }} /> }<span className="metric-step-thumb" style={{ left: `${importancePosition}%` }} /></div><button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting}><Plus size={16} /></button></div>
     </div>
 
-    <div className="metric-satisfaction-control"><div className="metric-control-heading"><span>Удовлетворённость</span></div></div>
-
-    <div className="metric-slider-area"><div className="metric-value-row metric-value-row-partners"><div className="metric-value-row-spacer" />{partnerValue != null && <div className="metric-partner-values"><span>Вы {formatValue(metric, currentValue)}</span><span>Партнёр {formatValue(metric, partnerValue)}</span></div>}</div>
+    <div className="metric-slider-area"><div className="metric-control-heading metric-value-control-heading"><span>Удовлетворённость</span></div><div className="metric-value-row metric-value-row-partners"><div className="metric-value-row-spacer" />{partnerValue != null && <div className="metric-partner-values"><span>Вы {formatValue(metric, currentValue)}</span><span>Партнёр {formatValue(metric, partnerValue)}</span></div>}</div>
       <div className="metric-stepper metric-value-stepper"><button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(-1)} disabled={isSaving || currentValue <= minValue || isDeleting}><Minus size={18} /></button><div className="metric-step-track metric-value-track"><span className="metric-step-partner-fill" style={{ left: `${Math.max(0, Math.min(100, partnerFillStart))}%`, width: `${Math.max(0, Math.min(100, partnerFillWidth))}%` }} /> <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, fillStart))}%`, width: `${Math.max(0, Math.min(100, fillWidth))}%` }} /><span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />{partnerPosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerPosition))}%` }} />}<span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} /></div><button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(1)} disabled={isSaving || currentValue >= maxValue || isDeleting}><Plus size={18} /></button></div><div className="metric-scale-labels"><span>{metric.left_label}</span><span>{metric.right_label}</span></div>
     </div>
     {saveError && <div className="metric-save-error">{saveError}</div>}
@@ -137,7 +120,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
 function MetricsPage() {
   const [metrics, setMetrics] = useState([]); const [isLoading, setIsLoading] = useState(true); const [error, setError] = useState(''); const pendingFlushes = useRef(new Map())
   function registerFlush(id, flush) { pendingFlushes.current.set(id, flush); return () => pendingFlushes.current.delete(id) }
-  async function loadMetrics({ flushPending = false } = {}) { setError(''); setIsLoading(true); try { if (flushPending) await Promise.all([...pendingFlushes.current.values()].map((flush) => flush())); const response = await apiFetch('/api/metrics/'); const data = await response.json().catch(() => []); if (!response.ok) throw new Error(data.detail || 'Не удалось загрузить метрики.'); setMetrics(Array.isArray(data) ? data : []) } catch (e) { setError(e.message || 'Не удалось загрузить метрики.') } finally { setIsLoading(false) } }
+  async function loadMetrics({ flushPending = false } = {}) { setError(''); setIsLoading(true); try { if (flushPending) await Promise.all([...pendingFlushes.current.values()].map(flush => flush())); const response = await apiFetch('/api/metrics/'); const data = await response.json().catch(() => []); if (!response.ok) throw new Error(data.detail || 'Не удалось загрузить метрики.'); setMetrics(Array.isArray(data) ? data : []) } catch (e) { setError(e.message || 'Не удалось загрузить метрики.') } finally { setIsLoading(false) } }
   function handleValueSaved(id, data) { setMetrics(items => items.map(m => m.id === id ? { ...m, latest_value: data.value, latest_satisfaction: data.satisfaction } : m)) }
   function handleImportanceSaved(id, next) { setMetrics(items => items.map(m => m.id === id ? { ...m, importance: next } : m)) }
   function handleMetricDeleted(id) { pendingFlushes.current.delete(id); setMetrics(items => items.filter(m => m.id !== id)) }
