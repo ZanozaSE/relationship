@@ -282,7 +282,7 @@ function HomePage() {
             {showNoteForm && <form className="home-inline-form" onSubmit={createNote}><textarea value={newNote} onChange={(event) => setNewNote(event.target.value)} placeholder="Напишите что-нибудь…" rows={4} autoFocus required /><div className="home-note-form-actions"><button type="button" className="secondary-button" onClick={cancelNewNote} disabled={isSavingNote}>Отменить</button><button type="submit" className="primary-button" disabled={isSavingNote}>{isSavingNote ? 'Сохраняем…' : 'Сохранить заметку'}</button></div></form>}
             {notes.length === 0 && !showNoteForm && <div className="home-feature-empty">Здесь пока пусто. Можно сохранить первую мысль или идею.</div>}
             {notes.map((note) => (
-              <div className="home-note" style={{ position: 'relative' }} key={note.id}>
+              <div className="home-note" key={note.id}>
                 {editingNoteId === note.id ? (
                   <form className="home-inline-form home-note-edit-form" onSubmit={(event) => updateNote(event, note.id)}>
                     <textarea value={editingNoteContent} onChange={(event) => setEditingNoteContent(event.target.value)} rows={4} autoFocus required />
@@ -293,7 +293,7 @@ function HomePage() {
                   </form>
                 ) : (
                   <>
-                    <p style={{ paddingRight: 28 }}>{note.content}</p>
+                    <p>{note.content}</p>
                     <div className="home-note-footer">
                       <span>{new Date(note.updated_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
                       <div className="home-note-actions">
