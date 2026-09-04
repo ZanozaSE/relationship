@@ -47,10 +47,17 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const maxValue = metric.scale_type === 'balance' ? BALANCE_MAX : metric.max_value
   const range = maxValue - minValue
   const currentValue = value ?? metric.target_value
+  const partnerValue = metric.partner_latest_value
   const position = range > 0 ? ((currentValue - minValue) / range) * 100 : 50
+  const partnerPosition = partnerValue == null || range <= 0
+    ? null
+    : ((partnerValue - minValue) / range) * 100
   const targetPosition = range > 0 ? ((metric.target_value - minValue) / range) * 100 : 50
   const fillStart = metric.scale_type === 'balance' ? Math.min(position, targetPosition) : 0
   const fillWidth = metric.scale_type === 'balance' ? Math.abs(position - targetPosition) : position
+  const displayedValue = partnerValue == null
+    ? currentValue
+    : Math.min(currentValue, partnerValue)
 
   async function saveValue(nextValue) {
     setIsSaving(true)
@@ -210,14 +217,30 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
       </div>
 
       <div className="metric-slider-area">
+        <div className="metric-value-row metric-value-row-partners">
+          <div>
+            <span className="metric-value-label">Значение</span>
+            <strong className="metric-value">{formatValue(metric, displayedValue)}</strong>
+          </div>
+          {partnerValue != null && (
+            <div className="metric-partner-values" aria-label={`Вы: ${formatValue(metric, currentValue)}. Партнёр: ${formatValue(metric, partnerValue)}.`}>
+              <span>Вы {formatValue(metric, currentValue)}</span>
+              <span>Партнёр {formatValue(metric, partnerValue)}</span>
+            </div>
+          )}
+        </div>
+
         <div className="metric-stepper metric-value-stepper">
           <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(-1)} disabled={isSaving || currentValue <= minValue || isDeleting} aria-label={`Уменьшить значение метрики «${metric.name}»`}>
             <Minus size={18} />
           </button>
-          <div className="metric-step-track metric-value-track" aria-hidden="true">
+          <div className="metric-step-track metric-value-track" aria-label={partnerValue == null ? `Ваше значение: ${formatValue(metric, currentValue)}` : `Ваше значение: ${formatValue(metric, currentValue)}. Значение партнёра: ${formatValue(metric, partnerValue)}`}>
             <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, fillStart))}%`, width: `${Math.max(0, Math.min(100, fillWidth))}%` }} />
             <span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
-            <span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} />
+            {partnerPosition != null && (
+              <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerPosition))}%` }} aria-hidden="true" />
+            )}
+            <span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} aria-hidden="true" />
           </div>
           <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(1)} disabled={isSaving || currentValue >= maxValue || isDeleting} aria-label={`Увеличить значение метрики «${metric.name}»`}>
             <Plus size={18} />
