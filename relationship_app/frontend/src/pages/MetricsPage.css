@@ -33,6 +33,16 @@
   line-height: 1.2;
 }
 
+.metric-importance-control .metric-control-values {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.metric-importance-control .metric-control-value-partner {
+  color: #9782ff !important;
+}
+
 .metric-importance-track .metric-step-fill {
   z-index: 1;
 }
@@ -45,6 +55,22 @@
   z-index: 4;
 }
 
+.metric-value-track .metric-step-partner-fill {
+  z-index: 1;
+}
+
+.metric-value-track .metric-step-fill {
+  z-index: 2;
+}
+
+.metric-value-track .metric-step-partner-thumb {
+  z-index: 4;
+}
+
+.metric-value-track .metric-step-thumb {
+  z-index: 6;
+}
+
 .metric-step-partner-fill {
   position: absolute;
   top: 0;
@@ -55,24 +81,56 @@
   z-index: 1;
 }
 
-.metric-value-track .metric-step-partner-fill {
-  z-index: 1;
+.metric-step-partner-thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  background: #f5f2f7;
+  border: 3px solid #9782ff;
+  border-radius: 50%;
+  box-shadow: 0 0 9px rgba(151,130,255,.55);
 }
 
-.metric-value-track .metric-step-fill {
-  z-index: 2;
+.metric-step-thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  background: #f5f2f7;
+  border: 3px solid #f05ba7;
+  border-radius: 50%;
+  box-shadow: 0 0 9px rgba(240,91,167,.55);
 }
 
-.metric-value-track .metric-step-target {
-  z-index: 5;
+.metric-step-target {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
+  background: rgba(245,242,247,.72);
 }
 
-.metric-value-track .metric-step-partner-thumb {
-  z-index: 4;
+.metric-partner-values {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 9px;
+  white-space: nowrap;
 }
 
-.metric-value-track .metric-step-thumb {
-  z-index: 6;
+.metric-partner-values span:first-child {
+  color: #f05ba7;
+}
+
+.metric-partner-values span:last-child {
+  color: #9782ff;
 }
 
 @media (max-width: 420px) {
