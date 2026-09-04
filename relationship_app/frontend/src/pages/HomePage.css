@@ -606,6 +606,7 @@
 
 .home-note-privacy-control .home-small-icon {
   flex: 0 0 28px;
+  border-color: rgba(255,255,255,.08);
 }
 
 .home-note-privacy-control .home-small-icon[aria-pressed="true"] {
