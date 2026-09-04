@@ -19,28 +19,30 @@
   white-space: nowrap;
 }
 
-.metric-control-value-current {
-  color: #f05ba7 !important;
-  font-size: 16px;
-  font-weight: 700;
+/* Все значения метрик используют единый размер по эталону значения важности пользователя. */
+.metric-control-value-current,
+.metric-control-value-partner,
+.metric-partner-values span {
+  font-size: 16px !important;
+  font-weight: 700 !important;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
-.metric-control-value-partner {
+.metric-control-value-current,
+.metric-partner-values span:first-child {
+  color: #f05ba7 !important;
+}
+
+.metric-control-value-partner,
+.metric-partner-values span:last-child {
   color: #9782ff !important;
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.2;
 }
 
 .metric-importance-control .metric-control-values {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
-}
-
-.metric-importance-control .metric-control-value-partner {
-  color: #9782ff !important;
 }
 
 .metric-importance-track .metric-step-fill {
@@ -125,14 +127,6 @@
   white-space: nowrap;
 }
 
-.metric-partner-values span:first-child {
-  color: #f05ba7;
-}
-
-.metric-partner-values span:last-child {
-  color: #9782ff;
-}
-
 /* Заголовок удовлетворённости должен иметь тот же ритм, что и «Важность». */
 .metric-value-control-heading {
   margin-top: 0;
@@ -144,21 +138,8 @@
 }
 
 @media (max-width: 420px) {
-  .metric-control-values {
-    gap: 7px;
-  }
-
-  .metric-control-value-current {
-    font-size: 15px;
-  }
-
-  .metric-control-value-partner {
-    font-size: 11px;
-  }
-
+  .metric-control-values,
   .metric-partner-values {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
+    gap: 7px;
   }
 }
