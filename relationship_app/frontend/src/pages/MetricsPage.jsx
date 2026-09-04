@@ -47,7 +47,6 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const currentValue = value ?? metric.target_value
   const partnerValue = metric.partner_latest_value
   const partnerImportance = metric.partner_importance
-  const partnerSatisfaction = metric.partner_latest_satisfaction
   const position = range ? ((currentValue - minValue) / range) * 100 : 50
   const partnerPosition = partnerValue == null || !range ? null : ((partnerValue - minValue) / range) * 100
   const importancePosition = (importance / 200) * 100
@@ -57,7 +56,6 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const fillWidth = metric.scale_type === 'balance' ? Math.abs(position - targetPosition) : position
   const partnerFillStart = metric.scale_type === 'balance' ? Math.min(partnerPosition ?? targetPosition, targetPosition) : 0
   const partnerFillWidth = partnerPosition == null ? 0 : metric.scale_type === 'balance' ? Math.abs(partnerPosition - targetPosition) : partnerPosition
-  const displayedValue = partnerValue == null ? currentValue : Math.min(currentValue, partnerValue)
 
   async function saveValue(nextValue) {
     setIsSaving(true); setSaveError('')
@@ -127,9 +125,9 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
       <div className="metric-stepper"><button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting}><Minus size={16} /></button><div className="metric-step-track metric-importance-track"><span className="metric-step-fill" style={{ width: `${importancePosition}%` }} />{partnerImportancePosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerImportancePosition))}%` }} /> }<span className="metric-step-thumb" style={{ left: `${importancePosition}%` }} /></div><button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting}><Plus size={16} /></button></div>
     </div>
 
-    <div className="metric-satisfaction-control"><div className="metric-control-heading"><span>Удовлетворённость</span><div className="metric-control-values">{satisfaction != null && <span className="metric-control-value metric-control-value-current">Вы {satisfaction}%</span>}{partnerSatisfaction != null && <span className="metric-control-value metric-control-value-partner">Партнёр {partnerSatisfaction}%</span>}</div></div></div>
+    <div className="metric-satisfaction-control"><div className="metric-control-heading"><span>Удовлетворённость</span></div></div>
 
-    <div className="metric-slider-area"><div className="metric-value-row metric-value-row-partners"><div><span className="metric-value-label">Значение</span><strong className="metric-value">{formatValue(metric, displayedValue)}</strong></div>{partnerValue != null && <div className="metric-partner-values"><span>Вы {formatValue(metric, currentValue)}</span><span>Партнёр {formatValue(metric, partnerValue)}</span></div>}</div>
+    <div className="metric-slider-area"><div className="metric-value-row metric-value-row-partners"><div className="metric-value-row-spacer" />{partnerValue != null && <div className="metric-partner-values"><span>Вы {formatValue(metric, currentValue)}</span><span>Партнёр {formatValue(metric, partnerValue)}</span></div>}</div>
       <div className="metric-stepper metric-value-stepper"><button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(-1)} disabled={isSaving || currentValue <= minValue || isDeleting}><Minus size={18} /></button><div className="metric-step-track metric-value-track"><span className="metric-step-partner-fill" style={{ left: `${Math.max(0, Math.min(100, partnerFillStart))}%`, width: `${Math.max(0, Math.min(100, partnerFillWidth))}%` }} /> <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, fillStart))}%`, width: `${Math.max(0, Math.min(100, fillWidth))}%` }} /><span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />{partnerPosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerPosition))}%` }} />}<span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} /></div><button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(1)} disabled={isSaving || currentValue >= maxValue || isDeleting}><Plus size={18} /></button></div><div className="metric-scale-labels"><span>{metric.left_label}</span><span>{metric.right_label}</span></div>
     </div>
     {saveError && <div className="metric-save-error">{saveError}</div>}
