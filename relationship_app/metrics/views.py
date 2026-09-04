@@ -156,8 +156,6 @@ class MetricValueHistoryView(APIView):
         except CoupleMetric.DoesNotExist:
             return Response({'detail': 'Метрика не найдена.'}, status=404)
 
-        values = get_metric_values(metric, request.user)
-
         period = request.query_params.get('period')
         if period is not None:
             allowed_periods = {7, 30, 365}
@@ -173,9 +171,20 @@ class MetricValueHistoryView(APIView):
             start_datetime = timezone.make_aware(
                 datetime.combine(start_date, datetime.min.time())
             )
-            values = [value for value in values if value.created_at >= start_datetime]
+            values = [
+                value
+                for value in get_metric_values(metric)
+                if value.created_at >= start_datetime
+            ]
+        else:
+            values = get_metric_values(metric)
 
+        partner_user_ids = list(
+            couple.members.values_list('user_id', flat=True)
+        )
+        values = [value for value in values if value.user_id in partner_user_ids]
         values = list(reversed(values))
+
         serializer = MetricValueSerializer(values, many=True, context={'metric': metric})
         return Response(serializer.data)
 
