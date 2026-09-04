@@ -282,7 +282,7 @@ function HomePage() {
             {showNoteForm && <form className="home-inline-form" onSubmit={createNote}><textarea value={newNote} onChange={(event) => setNewNote(event.target.value)} placeholder="Напишите что-нибудь…" rows={4} autoFocus required /><div className="home-note-form-actions"><button type="button" className="secondary-button" onClick={cancelNewNote} disabled={isSavingNote}>Отменить</button><button type="submit" className="primary-button" disabled={isSavingNote}>{isSavingNote ? 'Сохраняем…' : 'Сохранить заметку'}</button></div></form>}
             {notes.length === 0 && !showNoteForm && <div className="home-feature-empty">Здесь пока пусто. Можно сохранить первую мысль или идею.</div>}
             {notes.map((note) => (
-              <div className="home-note" key={note.id}>
+              <div className="home-note" style={{ position: 'relative' }} key={note.id}>
                 {editingNoteId === note.id ? (
                   <form className="home-inline-form home-note-edit-form" onSubmit={(event) => updateNote(event, note.id)}>
                     <textarea value={editingNoteContent} onChange={(event) => setEditingNoteContent(event.target.value)} rows={4} autoFocus required />
@@ -293,11 +293,11 @@ function HomePage() {
                   </form>
                 ) : (
                   <>
-                    <p>{note.content}</p>
+                    {note.author === currentUser?.id && <button type="button" className={`home-note-privacy-button${note.is_private ? ' active' : ''}`} onClick={() => toggleNotePrivacy(note)} aria-label={note.is_private ? 'Сделать заметку видимой партнёру' : 'Сделать заметку личной'} aria-pressed={note.is_private} title={note.is_private ? 'Личная заметка' : 'Видно партнёру'} style={{ position: 'absolute', top: 10, right: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, padding: 0, color: note.is_private ? '#f05ba7' : 'rgba(245,242,247,.34)', background: note.is_private ? 'rgba(240,91,167,.08)' : 'transparent', border: `1px solid ${note.is_private ? 'rgba(240,91,167,.45)' : 'rgba(255,255,255,.12)'}`, borderRadius: 5, cursor: 'pointer' }}>{note.is_private && <Check size={14} strokeWidth={2.4} />}</button>}
+                    <p style={{ paddingRight: 28 }}>{note.content}</p>
                     <div className="home-note-footer">
                       <span>{new Date(note.updated_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
-                      <div className="home-note-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, flexWrap: 'nowrap' }}>
-                        {note.author === currentUser?.id && <div className="home-note-privacy-control" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flex: '0 0 auto' }}><span style={{ color: 'rgba(245,242,247,.4)', fontSize: 9, lineHeight: 1 }}>Личная</span><button type="button" className={`home-note-privacy-button${note.is_private ? ' active' : ''}`} onClick={() => toggleNotePrivacy(note)} aria-label={note.is_private ? 'Сделать заметку видимой партнёру' : 'Сделать заметку личной'} aria-pressed={note.is_private} title={note.is_private ? 'Личная заметка' : 'Видно партнёру'} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, flex: '0 0 20px', padding: 0, color: note.is_private ? '#f05ba7' : 'rgba(245,242,247,.34)', background: note.is_private ? 'rgba(240,91,167,.08)' : 'transparent', border: `1px solid ${note.is_private ? 'rgba(240,91,167,.45)' : 'rgba(255,255,255,.12)'}`, borderRadius: 5, cursor: 'pointer' }}>{note.is_private && <Check size={14} strokeWidth={2.4} />}</button></div>}
+                      <div className="home-note-actions">
                         <button type="button" className="home-small-icon home-note-edit-button" onClick={() => startEditingNote(note)} aria-label="Редактировать заметку"><Pencil size={14} /></button>
                         <button type="button" className="home-small-icon" onClick={() => deleteNote(note.id)} aria-label="Удалить заметку"><Trash2 size={14} /></button>
                       </div>
