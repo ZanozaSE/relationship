@@ -46,18 +46,66 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const partnerImportancePosition = partnerImportance == null ? null : (partnerImportance / 200) * 100
   const targetPosition = range ? ((metric.target_value - minValue) / range) * 100 : 50
 
-  // Оба заполнения строятся как последовательные сегменты.
-  // Пользовательский цвет занимает участок от базовой точки до значения пользователя,
-  // партнёрский — только участок от значения пользователя до значения партнёра.
-  const importanceFillStart = 0
-  const importanceFillWidth = importancePosition
-  const importancePartnerFillStart = partnerImportancePosition == null ? 0 : Math.min(importancePosition, partnerImportancePosition)
-  const importancePartnerFillWidth = partnerImportancePosition == null ? 0 : Math.abs(partnerImportancePosition - importancePosition)
+  // Заполнение показывает два последовательных участка.
+  // Для обычной шкалы начало — 0, для balance начало — центральная точка 0.
+  // Ближайший к началу участок получает цвет человека с меньшим значением,
+  // а оставшийся участок — цвет человека с большим значением.
+  const importanceUserIsLower = partnerImportancePosition == null || importancePosition <= partnerImportancePosition
+  const importanceUserFillStart = importanceUserIsLower ? 0 : partnerImportancePosition
+  const importanceUserFillWidth = importanceUserIsLower ? importancePosition : importancePosition - partnerImportancePosition
+  const importancePartnerFillStart = partnerImportancePosition == null ? 0 : (importanceUserIsLower ? importancePosition : 0)
+  const importancePartnerFillWidth = partnerImportancePosition == null ? 0 : (importanceUserIsLower ? partnerImportancePosition - importancePosition : partnerImportancePosition)
 
-  const valueFillStart = metric.scale_type === 'balance' ? Math.min(position, targetPosition) : 0
-  const valueFillWidth = metric.scale_type === 'balance' ? Math.abs(position - targetPosition) : position
-  const valuePartnerFillStart = partnerPosition == null ? 0 : Math.min(position, partnerPosition)
-  const valuePartnerFillWidth = partnerPosition == null ? 0 : Math.abs(partnerPosition - position)
+  let valueFillStart
+  let valueFillWidth
+  let valuePartnerFillStart
+  let valuePartnerFillWidth
+
+  if (partnerPosition == null) {
+    valueFillStart = metric.scale_type === 'balance' ? Math.min(position, targetPosition) : 0
+    valueFillWidth = metric.scale_type === 'balance' ? Math.abs(position - targetPosition) : position
+    valuePartnerFillStart = 0
+    valuePartnerFillWidth = 0
+  } else if (metric.scale_type !== 'balance') {
+    // Level: от 0 до меньшего значения — цвет меньшего значения,
+    // затем до большего — цвет большего значения.
+    const userIsLower = position <= partnerPosition
+    valueFillStart = userIsLower ? 0 : partnerPosition
+    valueFillWidth = userIsLower ? position : position - partnerPosition
+    valuePartnerFillStart = userIsLower ? position : 0
+    valuePartnerFillWidth = userIsLower ? partnerPosition - position : partnerPosition
+  } else {
+    const userDirection = Math.sign(position - targetPosition)
+    const partnerDirection = Math.sign(partnerPosition - targetPosition)
+
+    if (userDirection !== 0 && userDirection === partnerDirection) {
+      // Balance в одну сторону от 0: ближайший к 0 получает первый сегмент,
+      // дальний — участок от ближайшего значения до дальнего.
+      const userDistance = Math.abs(position - targetPosition)
+      const partnerDistance = Math.abs(partnerPosition - targetPosition)
+      const userIsCloser = userDistance <= partnerDistance
+      const closerPosition = userIsCloser ? position : partnerPosition
+      const fartherPosition = userIsCloser ? partnerPosition : position
+
+      if (userIsCloser) {
+        valueFillStart = Math.min(targetPosition, closerPosition)
+        valueFillWidth = Math.abs(closerPosition - targetPosition)
+        valuePartnerFillStart = Math.min(closerPosition, fartherPosition)
+        valuePartnerFillWidth = Math.abs(fartherPosition - closerPosition)
+      } else {
+        valueFillStart = Math.min(closerPosition, fartherPosition)
+        valueFillWidth = Math.abs(fartherPosition - closerPosition)
+        valuePartnerFillStart = Math.min(targetPosition, closerPosition)
+        valuePartnerFillWidth = Math.abs(closerPosition - targetPosition)
+      }
+    } else {
+      // Balance в разные стороны: сегменты не пересекаются.
+      valueFillStart = Math.min(position, targetPosition)
+      valueFillWidth = Math.abs(position - targetPosition)
+      valuePartnerFillStart = Math.min(partnerPosition, targetPosition)
+      valuePartnerFillWidth = Math.abs(partnerPosition - targetPosition)
+    }
+  }
 
   async function saveValue(nextValue) {
     setIsSaving(true); setSaveError('')
@@ -117,8 +165,8 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
     <div className="metric-importance-control">
       <div className="metric-control-heading"><span>Важность</span><div className="metric-control-values"><span className="metric-control-value metric-control-value-current">{importance}%</span>{partnerImportance != null && <span className="metric-control-value metric-control-value-partner">{partnerImportance}%</span>}</div></div>
       <div className="metric-stepper"><button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting}><Minus size={16} /></button><div className="metric-step-track metric-importance-track">
-        {partnerImportancePosition != null && <span className="metric-step-partner-fill" style={{ left: `${importancePartnerFillStart}%`, width: `${importancePartnerFillWidth}%`, zIndex: 3 }} />}
-        <span className="metric-step-fill" style={{ left: `${importanceFillStart}%`, width: `${importanceFillWidth}%`, zIndex: 2 }} />
+        {partnerImportancePosition != null && <span className="metric-step-partner-fill" style={{ left: `${Math.max(0, Math.min(100, importancePartnerFillStart))}%`, width: `${Math.max(0, Math.min(100, importancePartnerFillWidth))}%` }} />}
+        <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, importanceUserFillStart))}%`, width: `${Math.max(0, Math.min(100, importanceUserFillWidth))}%` }} />
         {partnerImportancePosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerImportancePosition))}%` }} />}
         <span className="metric-step-thumb" style={{ left: `${importancePosition}%` }} />
       </div><button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting}><Plus size={16} /></button></div>
@@ -126,8 +174,8 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
 
     <div className="metric-slider-area"><div className="metric-control-heading metric-value-control-heading"><span>Удовлетворённость</span>{partnerValue != null && <div className="metric-partner-values"><span>{formatValue(metric, currentValue)}</span><span>{formatValue(metric, partnerValue)}</span></div>}</div>
       <div className="metric-stepper metric-value-stepper"><button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(-1)} disabled={isSaving || currentValue <= minValue || isDeleting}><Minus size={18} /></button><div className="metric-step-track metric-value-track">
-        {partnerPosition != null && <span className="metric-step-partner-fill" style={{ left: `${Math.max(0, Math.min(100, valuePartnerFillStart))}%`, width: `${Math.max(0, Math.min(100, valuePartnerFillWidth))}%`, zIndex: 3 }} />}
-        <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, valueFillStart))}%`, width: `${Math.max(0, Math.min(100, valueFillWidth))}%`, zIndex: 2 }} />
+        {partnerPosition != null && <span className="metric-step-partner-fill" style={{ left: `${Math.max(0, Math.min(100, valuePartnerFillStart))}%`, width: `${Math.max(0, Math.min(100, valuePartnerFillWidth))}%` }} />}
+        <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, valueFillStart))}%`, width: `${Math.max(0, Math.min(100, valueFillWidth))}%` }} />
         <span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
         {partnerPosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerPosition))}%` }} />}
         <span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} />
