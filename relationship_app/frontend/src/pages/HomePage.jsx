@@ -204,6 +204,20 @@ function HomePage() {
     } finally { setIsUpdatingNote(false) }
   }
 
+  async function toggleNotePrivacy(note) {
+    try {
+      const response = await apiFetch(`/api/couples/notes/${note.id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_private: !note.is_private }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.detail || 'Не удалось изменить приватность заметки.')
+      setNotes((current) => current.map((item) => item.id === note.id ? data : item))
+    } catch (privacyError) {
+      setError(privacyError.message || 'Не удалось изменить приватность заметки.')
+    }
+  }
+
   async function deleteNote(noteId) {
     const response = await apiFetch(`/api/couples/notes/${noteId}/`, { method: 'DELETE' })
     if (response.ok) setNotes((current) => current.filter((note) => note.id !== noteId))
@@ -274,6 +288,7 @@ function HomePage() {
                   </form>
                 ) : (
                   <>
+                    {note.author != null && <button type="button" className={`home-note-privacy-button${note.is_private ? ' active' : ''}`} onClick={() => toggleNotePrivacy(note)} aria-label={note.is_private ? 'Сделать заметку видимой партнёру' : 'Сделать заметку личной'} aria-pressed={note.is_private} title={note.is_private ? 'Личная заметка' : 'Видно партнёру'}>{note.is_private && <Check size={14} strokeWidth={2.4} />}</button>}
                     <p>{note.content}</p>
                     <div className="home-note-footer">
                       <span>{new Date(note.updated_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
