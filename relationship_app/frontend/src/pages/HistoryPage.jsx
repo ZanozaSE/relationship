@@ -119,18 +119,49 @@ function HistoryPage() {
             {metricHistories.length === 0 && <div className="history-feature-empty"><SlidersHorizontal size={20} /><p>Пока нет активных метрик.</p></div>}
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
-                const chronologicalValues = values.slice()
-                const userIds = [...new Set(values.map((item) => item.user_id))]
-                const chartData = chronologicalValues.map((item) => ({
-                  ...item,
-                  label: formatDate(item.created_at),
-                  [`user_${item.user_id}`]: item.satisfaction,
-                }))
-                const latest = values[values.length - 1]
+                const chronologicalValues = values.slice().sort((first, second) => new Date(first.created_at) - new Date(second.created_at))
+                const userIds = [...new Set(chronologicalValues.map((item) => item.user_id))]
+                const userNames = Object.fromEntries(
+                  userIds.map((userId) => [
+                    userId,
+                    chronologicalValues.find((item) => item.user_id === userId)?.user_display_name || 'Участник пары',
+                  ]),
+                )
+
+                const dailyState = {}
+                const stateByUser = Object.fromEntries(userIds.map((userId) => [userId, null]))
+                chronologicalValues.forEach((item) => {
+                  const date = new Date(item.created_at)
+                  const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                  stateByUser[item.user_id] = item.satisfaction
+                  dailyState[dayKey] = { ...stateByUser }
+                })
+
+                const chartData = []
+                const firstDate = chronologicalValues[0]?.created_at ? new Date(chronologicalValues[0].created_at) : null
+                const lastDate = chronologicalValues[chronologicalValues.length - 1]?.created_at ? new Date(chronologicalValues[chronologicalValues.length - 1].created_at) : null
+                if (firstDate && lastDate) {
+                  const cursor = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate())
+                  const endDate = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate())
+                  let currentState = Object.fromEntries(userIds.map((userId) => [userId, null]))
+
+                  while (cursor <= endDate) {
+                    const dayKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
+                    if (dailyState[dayKey]) {
+                      currentState = { ...currentState, ...dailyState[dayKey] }
+                    }
+                    chartData.push({
+                      label: formatDate(cursor),
+                      ...Object.fromEntries(userIds.map((userId) => [`user_${userId}`, currentState[userId]])),
+                    })
+                    cursor.setDate(cursor.getDate() + 1)
+                  }
+                }
+
+                const latest = chronologicalValues[chronologicalValues.length - 1]
                 const visibleEvents = userIds
-                  .flatMap((userId) => values.filter((item) => item.user_id === userId).slice(-4))
+                  .flatMap((userId) => chronologicalValues.filter((item) => item.user_id === userId).slice(-4))
                   .sort((first, second) => new Date(second.created_at) - new Date(first.created_at))
-                const hasPartnerHistory = userIds.length > 1
 
                 return (
                   <article className="history-metric-card" key={metric.id}>
@@ -150,26 +181,19 @@ function HistoryPage() {
                             <XAxis dataKey="label" tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                             <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: 'rgba(245,242,247,.24)', fontSize: 8 }} axisLine={false} tickLine={false} width={30} />
                             <Tooltip contentStyle={{ background: 'rgba(12,14,29,.96)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, fontSize: 11 }} labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }} formatter={(value) => formatSatisfaction(value)} />
-                            {hasPartnerHistory ? (
-                              userIds.map((userId) => {
-                                const userValues = values.filter((item) => item.user_id === userId)
-                                const userName = userValues[0]?.user_display_name || 'Участник пары'
-                                return (
-                                  <Line
-                                    key={userId}
-                                    type="monotone"
-                                    dataKey={`user_${userId}`}
-                                    name={userName}
-                                    stroke={userId === userIds[0] ? '#f05ba7' : '#9b7cff'}
-                                    strokeWidth={2.5}
-                                    dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }}
-                                    activeDot={{ r: 4 }}
-                                  />
-                                )
-                              })
-                            ) : (
-                              <Line type="monotone" dataKey={`user_${latest?.user_id}`} name={latest?.user_display_name || 'Вы'} stroke="#f05ba7" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }} activeDot={{ r: 4 }} />
-                            )}
+                            {userIds.map((userId) => (
+                              <Line
+                                key={userId}
+                                type="monotone"
+                                dataKey={`user_${userId}`}
+                                name={userNames[userId]}
+                                stroke={userId === userIds[0] ? '#f05ba7' : '#9b7cff'}
+                                strokeWidth={2.5}
+                                dot={{ r: 3, strokeWidth: 2, fill: '#15172c' }}
+                                activeDot={{ r: 4 }}
+                                connectNulls
+                              />
+                            ))}
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
