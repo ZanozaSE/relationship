@@ -134,8 +134,8 @@ class CoupleNotesView(APIView):
         couple = get_user_couple(request.user)
         if couple is None:
             return Response({'detail': 'Пользователь не состоит в паре.'}, status=404)
-        notes = CoupleNote.objects.filter(couple=couple)
-        return Response(CoupleNoteSerializer(notes, many=True).data)
+        notes = CoupleNote.objects.filter(couple=couple).filter(is_private=False) | CoupleNote.objects.filter(couple=couple, author=request.user)
+        return Response(CoupleNoteSerializer(notes.distinct(), many=True).data)
 
     def post(self, request):
         couple = get_user_couple(request.user)
@@ -158,6 +158,10 @@ class CoupleNoteDetailView(APIView):
             note = CoupleNote.objects.get(id=note_id, couple=couple)
         except CoupleNote.DoesNotExist:
             return Response({'detail': 'Заметка не найдена.'}, status=404)
+
+        if 'is_private' in request.data and note.author_id != request.user.id:
+            return Response({'detail': 'Изменять приватность заметки может только её автор.'}, status=403)
+
         serializer = CoupleNoteSerializer(note, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         note = serializer.save()
