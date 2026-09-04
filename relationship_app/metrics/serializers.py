@@ -9,6 +9,7 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
     latest_value = serializers.SerializerMethodField()
     latest_satisfaction = serializers.SerializerMethodField()
     partner_latest_value = serializers.SerializerMethodField()
+    partner_importance = serializers.SerializerMethodField()
 
     class Meta:
         model = CoupleMetric
@@ -26,11 +27,23 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
             'latest_value',
             'latest_satisfaction',
             'partner_latest_value',
+            'partner_importance',
         )
 
     def get_importance(self, obj):
         user = self.context['request'].user
         importance = obj.importance_settings.filter(user=user).first()
+        return importance.importance if importance else 100
+
+    def get_partner(self, obj):
+        user = self.context['request'].user
+        return obj.couple.members.exclude(user=user).select_related('user').first()
+
+    def get_partner_importance(self, obj):
+        partner = self.get_partner(obj)
+        if partner is None:
+            return None
+        importance = obj.importance_settings.filter(user=partner.user).first()
         return importance.importance if importance else 100
 
     def get_latest_value(self, obj):
@@ -44,9 +57,7 @@ class CoupleMetricSerializer(serializers.ModelSerializer):
         return metric_value.satisfaction if metric_value else None
 
     def get_partner_latest_value(self, obj):
-        user = self.context['request'].user
-        couple = obj.couple
-        partner = couple.members.exclude(user=user).select_related('user').first()
+        partner = self.get_partner(obj)
         if partner is None:
             return None
         metric_value = get_latest_metric_value(obj, partner.user)
