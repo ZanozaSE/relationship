@@ -119,16 +119,16 @@ function HistoryPage() {
             {metricHistories.length === 0 && <div className="history-feature-empty"><SlidersHorizontal size={20} /><p>Пока нет активных метрик.</p></div>}
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
-                const chronologicalValues = values.slice().reverse()
+                const chronologicalValues = values.slice()
                 const userIds = [...new Set(values.map((item) => item.user_id))]
                 const chartData = chronologicalValues.map((item) => ({
                   ...item,
                   label: formatDate(item.created_at),
                   [`user_${item.user_id}`]: item.satisfaction,
                 }))
-                const latest = values[0]
+                const latest = values[values.length - 1]
                 const visibleEvents = userIds
-                  .flatMap((userId) => values.filter((item) => item.user_id === userId).slice(0, 4))
+                  .flatMap((userId) => values.filter((item) => item.user_id === userId).slice(-4))
                   .sort((first, second) => new Date(second.created_at) - new Date(first.created_at))
                 const hasPartnerHistory = userIds.length > 1
 
