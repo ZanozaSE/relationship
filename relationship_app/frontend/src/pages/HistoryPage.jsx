@@ -119,7 +119,9 @@ function HistoryPage() {
             {metricHistories.length === 0 && <div className="history-feature-empty"><SlidersHorizontal size={20} /><p>Пока нет активных метрик.</p></div>}
             <div className="history-metrics-list">
               {metricHistories.map(({ metric, values }) => {
-                const chronologicalValues = values.slice().sort((first, second) => new Date(first.created_at) - new Date(second.created_at))
+                const chronologicalValues = values
+                  .slice()
+                  .sort((first, second) => new Date(first.created_at) - new Date(second.created_at))
                 const userIds = [...new Set(chronologicalValues.map((item) => item.user_id))]
                 const userNames = Object.fromEntries(
                   userIds.map((userId) => [
@@ -128,35 +130,22 @@ function HistoryPage() {
                   ]),
                 )
 
-                const dailyState = {}
+                // В отличие от общей удовлетворённости, история конкретной
+                // метрики должна содержать каждое сохранённое изменение.
+                // Поэтому здесь точка графика создаётся для каждого события,
+                // а не для каждого календарного дня.
                 const stateByUser = Object.fromEntries(userIds.map((userId) => [userId, null]))
-                chronologicalValues.forEach((item) => {
-                  const date = new Date(item.created_at)
-                  const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                const chartData = chronologicalValues.map((item) => {
                   stateByUser[item.user_id] = item.satisfaction
-                  dailyState[dayKey] = { ...stateByUser }
-                })
 
-                const chartData = []
-                const firstDate = chronologicalValues[0]?.created_at ? new Date(chronologicalValues[0].created_at) : null
-                const lastDate = chronologicalValues[chronologicalValues.length - 1]?.created_at ? new Date(chronologicalValues[chronologicalValues.length - 1].created_at) : null
-                if (firstDate && lastDate) {
-                  const cursor = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate())
-                  const endDate = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate())
-                  let currentState = Object.fromEntries(userIds.map((userId) => [userId, null]))
-
-                  while (cursor <= endDate) {
-                    const dayKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
-                    if (dailyState[dayKey]) {
-                      currentState = { ...currentState, ...dailyState[dayKey] }
-                    }
-                    chartData.push({
-                      label: formatDate(cursor),
-                      ...Object.fromEntries(userIds.map((userId) => [`user_${userId}`, currentState[userId]])),
-                    })
-                    cursor.setDate(cursor.getDate() + 1)
+                  return {
+                    timestamp: item.created_at,
+                    label: formatDateTime(item.created_at),
+                    ...Object.fromEntries(
+                      userIds.map((userId) => [`user_${userId}`, stateByUser[userId]]),
+                    ),
                   }
-                }
+                })
 
                 const latest = chronologicalValues[chronologicalValues.length - 1]
                 const visibleEvents = userIds
