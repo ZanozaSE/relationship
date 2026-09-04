@@ -50,27 +50,22 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const currentValue = value ?? metric.target_value
   const partnerValue = metric.partner_latest_value
   const partnerImportance = metric.partner_importance
+  const partnerSatisfaction = metric.partner_latest_satisfaction
   const position = range > 0 ? ((currentValue - minValue) / range) * 100 : 50
-  const partnerPosition = partnerValue == null || range <= 0
-    ? null
-    : ((partnerValue - minValue) / range) * 100
+  const partnerPosition = partnerValue == null || range <= 0 ? null : ((partnerValue - minValue) / range) * 100
   const importancePosition = (importance / 200) * 100
   const partnerImportancePosition = partnerImportance == null ? null : (partnerImportance / 200) * 100
-  const targetPosition = range > 0 ? ((metric.target_value - minValue) / range) * 100 : 50
-  const fillStart = metric.scale_type === 'balance' ? Math.min(position, targetPosition) : 0
-  const fillWidth = metric.scale_type === 'balance' ? Math.abs(position - targetPosition) : position
-  const displayedValue = partnerValue == null
-    ? currentValue
-    : Math.min(currentValue, partnerValue)
+  const satisfactionPosition = satisfaction == null ? null : Math.max(0, Math.min(100, satisfaction))
+  const partnerSatisfactionPosition = partnerSatisfaction == null ? null : Math.max(0, Math.min(100, partnerSatisfaction))
+  const fillStart = metric.scale_type === 'balance' ? Math.min(position, 50) : 0
+  const fillWidth = metric.scale_type === 'balance' ? Math.abs(position - 50) : position
+  const displayedValue = partnerValue == null ? currentValue : Math.min(currentValue, partnerValue)
 
   async function saveValue(nextValue) {
     setIsSaving(true)
     setSaveError('')
     try {
-      const response = await apiFetch(`/api/metrics/${metric.id}/value/`, {
-        method: 'POST',
-        body: JSON.stringify({ value: nextValue }),
-      })
+      const response = await apiFetch(`/api/metrics/${metric.id}/value/`, { method: 'POST', body: JSON.stringify({ value: nextValue }) })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || data.value?.[0] || 'Не удалось сохранить значение.')
       setValue(data.value)
@@ -87,20 +82,16 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
 
   useEffect(() => {
     if (!onRegisterFlush) return undefined
-
     const flush = async () => {
       if (valueSaveTimerRef.current) {
         clearTimeout(valueSaveTimerRef.current)
         valueSaveTimerRef.current = null
       }
-
       const nextValue = pendingValueRef.current
       if (nextValue === null) return
-
       pendingValueRef.current = null
       await saveValueRef.current(nextValue)
     }
-
     return onRegisterFlush(metric.id, flush)
   }, [metric.id, onRegisterFlush])
 
@@ -108,10 +99,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
     setIsSavingImportance(true)
     setSaveError('')
     try {
-      const response = await apiFetch(`/api/metrics/${metric.id}/importance/`, {
-        method: 'PATCH',
-        body: JSON.stringify({ importance: nextImportance }),
-      })
+      const response = await apiFetch(`/api/metrics/${metric.id}/importance/`, { method: 'PATCH', body: JSON.stringify({ importance: nextImportance }) })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || data.importance?.[0] || 'Не удалось сохранить важность.')
       const savedImportance = data.importance ?? nextImportance
@@ -157,20 +145,15 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
 
   async function deleteMetric() {
     if (isDeleting || isSaving || isSavingImportance) return
-
     const confirmed = window.confirm(`Удалить метрику «${metric.name}»?\n\nОна исчезнет из списка, а история значений сохранится.`)
     if (!confirmed) return
-
     setIsDeleting(true)
     setSaveError('')
     if (valueSaveTimerRef.current) clearTimeout(valueSaveTimerRef.current)
     if (importanceSaveTimerRef.current) clearTimeout(importanceSaveTimerRef.current)
     pendingValueRef.current = null
-
     try {
-      const response = await apiFetch(`/api/metrics/${metric.id}/delete/`, {
-        method: 'DELETE',
-      })
+      const response = await apiFetch(`/api/metrics/${metric.id}/delete/`, { method: 'DELETE' })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.detail || 'Не удалось удалить метрику.')
       onMetricDeleted?.(metric.id)
@@ -188,9 +171,7 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
           <h2>{metric.name}</h2>
         </div>
         <div className="metric-card-actions">
-          <button type="button" className="metric-delete-button" onClick={deleteMetric} disabled={isDeleting || isSaving || isSavingImportance} aria-label={`Удалить метрику «${metric.name}»`} title="Удалить метрику">
-            <Trash2 size={16} />
-          </button>
+          <button type="button" className="metric-delete-button" onClick={deleteMetric} disabled={isDeleting || isSaving || isSavingImportance} aria-label={`Удалить метрику «${metric.name}»`} title="Удалить метрику"><Trash2 size={16} /></button>
         </div>
       </div>
 
@@ -203,29 +184,27 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
           </div>
         </div>
         <div className="metric-stepper">
-          <button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting} aria-label="Уменьшить важность">
-            <Minus size={16} />
-          </button>
+          <button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting} aria-label="Уменьшить важность"><Minus size={16} /></button>
           <div className="metric-step-track metric-importance-track" aria-hidden="true">
             <span className="metric-step-fill" style={{ width: `${importancePosition}%` }} />
-            {partnerImportancePosition != null && (
-              <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerImportancePosition))}%` }} aria-hidden="true" />
-            )}
+            {partnerImportancePosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerImportancePosition))}%` }} aria-hidden="true" />}
             <span className="metric-step-thumb" style={{ left: `${importancePosition}%` }} />
           </div>
-          <button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting} aria-label="Увеличить важность">
-            <Plus size={16} />
-          </button>
+          <button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting} aria-label="Увеличить важность"><Plus size={16} /></button>
         </div>
       </div>
 
       <div className="metric-satisfaction-control">
         <div className="metric-control-heading">
           <span>Удовлетворённость</span>
-          <span className="metric-control-value metric-satisfaction-value">{satisfaction == null ? '—' : `${satisfaction}%`}</span>
+          <div className="metric-control-values">
+            <span className="metric-control-value metric-control-value-current">{satisfaction == null ? '—' : `Вы ${satisfaction}%`}</span>
+            {partnerSatisfaction != null && <span className="metric-control-value metric-control-value-partner">Партнёр {partnerSatisfaction}%</span>}
+          </div>
         </div>
         <div className="metric-satisfaction-track" aria-hidden="true">
-          <span className="metric-satisfaction-fill" style={{ width: `${Math.max(0, Math.min(100, satisfaction ?? 0))}%` }} />
+          {satisfactionPosition != null && <span className="metric-satisfaction-fill" style={{ width: `${satisfactionPosition}%` }} />}
+          {partnerSatisfactionPosition != null && <span className="metric-satisfaction-partner-marker" style={{ left: `${partnerSatisfactionPosition}%` }} />}
         </div>
       </div>
 
@@ -235,34 +214,22 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
             <span className="metric-value-label">Значение</span>
             <strong className="metric-value">{formatValue(metric, displayedValue)}</strong>
           </div>
-          {partnerValue != null && (
-            <div className="metric-partner-values" aria-label={`Вы: ${formatValue(metric, currentValue)}. Партнёр: ${formatValue(metric, partnerValue)}.`}>
-              <span>Вы {formatValue(metric, currentValue)}</span>
-              <span>Партнёр {formatValue(metric, partnerValue)}</span>
-            </div>
-          )}
+          {partnerValue != null && <div className="metric-partner-values" aria-label={`Вы: ${formatValue(metric, currentValue)}. Партнёр: ${formatValue(metric, partnerValue)}.`}>
+            <span>Вы {formatValue(metric, currentValue)}</span>
+            <span>Партнёр {formatValue(metric, partnerValue)}</span>
+          </div>}
         </div>
 
         <div className="metric-stepper metric-value-stepper">
-          <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(-1)} disabled={isSaving || currentValue <= minValue || isDeleting} aria-label={`Уменьшить значение метрики «${metric.name}»`}>
-            <Minus size={18} />
-          </button>
+          <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(-1)} disabled={isSaving || currentValue <= minValue || isDeleting} aria-label={`Уменьшить значение метрики «${metric.name}»`}><Minus size={18} /></button>
           <div className="metric-step-track metric-value-track" aria-label={partnerValue == null ? `Ваше значение: ${formatValue(metric, currentValue)}` : `Ваше значение: ${formatValue(metric, currentValue)}. Значение партнёра: ${formatValue(metric, partnerValue)}`}>
             <span className="metric-step-fill" style={{ left: `${Math.max(0, Math.min(100, fillStart))}%`, width: `${Math.max(0, Math.min(100, fillWidth))}%` }} />
-            <span className="metric-step-target" style={{ left: `${Math.max(0, Math.min(100, targetPosition))}%` }} />
-            {partnerPosition != null && (
-              <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerPosition))}%` }} aria-hidden="true" />
-            )}
+            {partnerPosition != null && <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerPosition))}%` }} aria-hidden="true" />}
             <span className="metric-step-thumb metric-value-thumb" style={{ left: `${Math.max(0, Math.min(100, position))}%` }} aria-hidden="true" />
           </div>
-          <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(1)} disabled={isSaving || currentValue >= maxValue || isDeleting} aria-label={`Увеличить значение метрики «${metric.name}»`}>
-            <Plus size={18} />
-          </button>
+          <button type="button" className="metric-step-button metric-value-step-button" onClick={() => changeValue(1)} disabled={isSaving || currentValue >= maxValue || isDeleting} aria-label={`Увеличить значение метрики «${metric.name}»`}><Plus size={18} /></button>
         </div>
-        <div className="metric-scale-labels">
-          <span>{metric.left_label}</span>
-          <span>{metric.right_label}</span>
-        </div>
+        <div className="metric-scale-labels"><span>{metric.left_label}</span><span>{metric.right_label}</span></div>
       </div>
 
       {saveError && <div className="metric-save-error">{saveError}</div>}
@@ -285,10 +252,7 @@ function MetricsPage() {
     setError('')
     setIsLoading(true)
     try {
-      if (flushPending) {
-        await Promise.all(Array.from(pendingFlushesRef.current.values()).map((flush) => flush()))
-      }
-
+      if (flushPending) await Promise.all(Array.from(pendingFlushesRef.current.values()).map((flush) => flush()))
       const response = await apiFetch('/api/metrics/')
       const data = await response.json().catch(() => [])
       if (!response.ok) throw new Error(data.detail || 'Не удалось загрузить метрики.')
@@ -301,17 +265,11 @@ function MetricsPage() {
   }
 
   function handleValueSaved(metricId, data) {
-    setMetrics((currentMetrics) => currentMetrics.map((metric) => (
-      metric.id === metricId
-        ? { ...metric, latest_value: data.value, latest_satisfaction: data.satisfaction }
-        : metric
-    )))
+    setMetrics((currentMetrics) => currentMetrics.map((metric) => metric.id === metricId ? { ...metric, latest_value: data.value, latest_satisfaction: data.satisfaction } : metric))
   }
 
-  function handleImportanceSaved(metricId, importance) {
-    setMetrics((currentMetrics) => currentMetrics.map((metric) => (
-      metric.id === metricId ? { ...metric, importance } : metric
-    )))
+  function handleImportanceSaved(metricId, nextImportance) {
+    setMetrics((currentMetrics) => currentMetrics.map((metric) => metric.id === metricId ? { ...metric, importance: nextImportance } : metric))
   }
 
   function handleMetricDeleted(metricId) {
@@ -324,32 +282,13 @@ function MetricsPage() {
   return (
     <section className="page metrics-page">
       <div className="page-heading metrics-page-heading">
-        <div>
-          <p className="page-eyebrow">Ваши показатели</p>
-          <h1>Метрики</h1>
-        </div>
-        <button type="button" className="icon-button" onClick={() => loadMetrics({ flushPending: true })} disabled={isLoading} aria-label="Обновить метрики">
-          <RefreshCw size={18} className={isLoading ? 'spin' : ''} />
-        </button>
+        <div><p className="page-eyebrow">Ваши показатели</p><h1>Метрики</h1></div>
+        <button type="button" className="icon-button" onClick={() => loadMetrics({ flushPending: true })} disabled={isLoading} aria-label="Обновить метрики"><RefreshCw size={18} className={isLoading ? 'spin' : ''} /></button>
       </div>
-
       {isLoading && <div className="metrics-state"><span className="state-dot" /><p>Загружаем ваши метрики…</p></div>}
       {!isLoading && error && <div className="metrics-state error-state"><p>{error}</p><button type="button" className="secondary-button" onClick={() => loadMetrics({ flushPending: true })}>Повторить</button></div>}
       {!isLoading && !error && metrics.length === 0 && <div className="metrics-state"><p>Пока нет активных метрик.</p><p className="state-hint">Создайте первую с помощью кнопки «+».</p></div>}
-      {!isLoading && !error && metrics.length > 0 && (
-        <div className="metrics-list">
-          {metrics.map((metric) => (
-            <MetricCard
-              key={metric.id}
-              metric={metric}
-              onValueSaved={handleValueSaved}
-              onImportanceSaved={handleImportanceSaved}
-              onMetricDeleted={handleMetricDeleted}
-              onRegisterFlush={registerFlush}
-            />
-          ))}
-        </div>
-      )}
+      {!isLoading && !error && metrics.length > 0 && <div className="metrics-list">{metrics.map((metric) => <MetricCard key={metric.id} metric={metric} onValueSaved={handleValueSaved} onImportanceSaved={handleImportanceSaved} onMetricDeleted={handleMetricDeleted} onRegisterFlush={registerFlush} />)}</div>}
     </section>
   )
 }
