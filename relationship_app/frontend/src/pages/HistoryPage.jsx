@@ -121,7 +121,10 @@ function HistoryPage() {
               {metricHistories.map(({ metric, values }) => {
                 const chronologicalValues = values
                   .slice()
-                  .sort((first, second) => new Date(first.created_at) - new Date(second.created_at))
+                  .sort((first, second) => {
+                    const timeDifference = new Date(first.created_at) - new Date(second.created_at)
+                    return timeDifference || first.id - second.id
+                  })
                 const userIds = [...new Set(chronologicalValues.map((item) => item.user_id))]
                 const userNames = Object.fromEntries(
                   userIds.map((userId) => [
@@ -130,15 +133,17 @@ function HistoryPage() {
                   ]),
                 )
 
-                // Каждое сохранённое изменение остаётся отдельной точкой.
-                // Временная координата точки — реальный timestamp события,
-                // поэтому курсор Tooltip и активная точка используют одну и ту же ось.
+                // Каждое сохранённое изменение — отдельная точка.
+                // Для X используем порядковый номер события, а не timestamp:
+                // так каждая отметка имеет точную позицию на общей оси, включая
+                // несколько изменений с одинаковым временем.
                 const stateByUser = Object.fromEntries(userIds.map((userId) => [userId, null]))
-                const chartData = chronologicalValues.map((item) => {
+                const chartData = chronologicalValues.map((item, index) => {
                   stateByUser[item.user_id] = item.satisfaction
 
                   return {
-                    timestamp: new Date(item.created_at).getTime(),
+                    eventIndex: index,
+                    timestamp: item.created_at,
                     ...Object.fromEntries(
                       userIds.map((userId) => [`user_${userId}`, stateByUser[userId]]),
                     ),
@@ -167,21 +172,21 @@ function HistoryPage() {
                             <CartesianGrid stroke="rgba(255,255,255,.05)" vertical={false} />
                             <XAxis
                               type="number"
-                              dataKey="timestamp"
-                              scale="time"
-                              domain={['dataMin', 'dataMax']}
-                              tickFormatter={(value) => formatDateTime(value)}
+                              dataKey="eventIndex"
+                              domain={[0, Math.max(chartData.length - 1, 1)]}
+                              ticks={chartData.map((item) => item.eventIndex)}
+                              tickFormatter={(value) => formatDateTime(chartData[value]?.timestamp)}
                               tick={{ fill: 'rgba(245,242,247,.3)', fontSize: 9 }}
                               axisLine={false}
                               tickLine={false}
-                              interval="preserveStartEnd"
+                              interval={0}
                             />
                             <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={{ fill: 'rgba(245,242,247,.24)', fontSize: 8 }} axisLine={false} tickLine={false} width={30} />
                             <Tooltip
                               cursor={{ stroke: 'rgba(255,255,255,.45)', strokeWidth: 1 }}
                               contentStyle={{ background: 'rgba(12,14,29,.96)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, fontSize: 11 }}
                               labelStyle={{ color: 'rgba(245,242,247,.55)', marginBottom: 4 }}
-                              labelFormatter={(value) => formatDateTime(value)}
+                              labelFormatter={(value) => formatDateTime(chartData[Number(value)]?.timestamp)}
                               formatter={(value) => formatSatisfaction(value)}
                             />
                             {userIds.map((userId) => (
