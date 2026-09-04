@@ -6,13 +6,12 @@ from django.utils import timezone
 from .models import CoupleMetric, MetricValue
 
 
-def get_metric_values(metric, user):
-    """Возвращает все сохранённые значения метрики пользователя по времени."""
-    return list(
-        MetricValue.objects
-        .filter(metric=metric, user=user)
-        .order_by('created_at', 'id')
-    )
+def get_metric_values(metric, user=None):
+    """Возвращает сохранённые значения метрики, при необходимости для одного пользователя."""
+    queryset = MetricValue.objects.filter(metric=metric)
+    if user is not None:
+        queryset = queryset.filter(user=user)
+    return list(queryset.order_by('created_at', 'id'))
 
 
 def get_latest_metric_value(metric, user):
