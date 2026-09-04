@@ -179,13 +179,18 @@ class MetricValueHistoryView(APIView):
         else:
             values = get_metric_values(metric)
 
-        partner_user_ids = list(
-            couple.members.values_list('user_id', flat=True)
-        )
+        partner_user_ids = list(couple.members.values_list('user_id', flat=True))
         values = [value for value in values if value.user_id in partner_user_ids]
 
-        serializer = MetricValueSerializer(values, many=True, context={'metric': metric})
-        return Response(serializer.data)
+        serialized_values = MetricValueSerializer(
+            values,
+            many=True,
+            context={'metric': metric},
+        ).data
+        for item in serialized_values:
+            item['is_current_user'] = item['user_id'] == request.user.id
+
+        return Response(serialized_values)
 
 
 class RelationshipSatisfactionView(APIView):
