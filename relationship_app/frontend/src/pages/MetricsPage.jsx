@@ -49,10 +49,13 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
   const range = maxValue - minValue
   const currentValue = value ?? metric.target_value
   const partnerValue = metric.partner_latest_value
+  const partnerImportance = metric.partner_importance
   const position = range > 0 ? ((currentValue - minValue) / range) * 100 : 50
   const partnerPosition = partnerValue == null || range <= 0
     ? null
     : ((partnerValue - minValue) / range) * 100
+  const importancePosition = (importance / 200) * 100
+  const partnerImportancePosition = partnerImportance == null ? null : (partnerImportance / 200) * 100
   const targetPosition = range > 0 ? ((metric.target_value - minValue) / range) * 100 : 50
   const fillStart = metric.scale_type === 'balance' ? Math.min(position, targetPosition) : 0
   const fillWidth = metric.scale_type === 'balance' ? Math.abs(position - targetPosition) : position
@@ -194,15 +197,21 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
       <div className="metric-importance-control">
         <div className="metric-control-heading">
           <span>Важность</span>
-          <span className="metric-control-value">{importance}%</span>
+          <div className="metric-control-values">
+            <span className="metric-control-value metric-control-value-current">Вы {importance}%</span>
+            {partnerImportance != null && <span className="metric-control-value metric-control-value-partner">Партнёр {partnerImportance}%</span>}
+          </div>
         </div>
         <div className="metric-stepper">
           <button type="button" className="metric-step-button" onClick={() => changeImportance(-1)} disabled={isSavingImportance || importance <= 0 || isDeleting} aria-label="Уменьшить важность">
             <Minus size={16} />
           </button>
-          <div className="metric-step-track" aria-hidden="true">
-            <span className="metric-step-fill" style={{ width: `${(importance / 200) * 100}%` }} />
-            <span className="metric-step-thumb" style={{ left: `${(importance / 200) * 100}%` }} />
+          <div className="metric-step-track metric-importance-track" aria-hidden="true">
+            <span className="metric-step-fill" style={{ width: `${importancePosition}%` }} />
+            {partnerImportancePosition != null && (
+              <span className="metric-step-partner-thumb" style={{ left: `${Math.max(0, Math.min(100, partnerImportancePosition))}%` }} aria-hidden="true" />
+            )}
+            <span className="metric-step-thumb" style={{ left: `${importancePosition}%` }} />
           </div>
           <button type="button" className="metric-step-button" onClick={() => changeImportance(1)} disabled={isSavingImportance || importance >= 200 || isDeleting} aria-label="Увеличить важность">
             <Plus size={16} />
@@ -213,7 +222,10 @@ function MetricCard({ metric, onValueSaved, onImportanceSaved, onMetricDeleted, 
       <div className="metric-satisfaction-control">
         <div className="metric-control-heading">
           <span>Удовлетворённость</span>
-          <span className="metric-control-value">{satisfaction == null ? '—' : `${satisfaction}%`}</span>
+          <span className="metric-control-value metric-satisfaction-value">{satisfaction == null ? '—' : `${satisfaction}%`}</span>
+        </div>
+        <div className="metric-satisfaction-track" aria-hidden="true">
+          <span className="metric-satisfaction-fill" style={{ width: `${Math.max(0, Math.min(100, satisfaction ?? 0))}%` }} />
         </div>
       </div>
 
